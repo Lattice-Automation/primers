@@ -18,10 +18,11 @@ def run():
 
     fwd, rev = primers(
         args.seq,
-        add_fwd=args.fwd,
-        add_fwd_len=tuple(args.flen),
-        add_rev=args.rev,
-        add_rev_len=tuple(args.rlen),
+        add_fwd=args.f,
+        add_fwd_len=tuple(args.fl),
+        add_rev=args.r,
+        add_rev_len=tuple(args.rl),
+        offtarget_check=args.t,
     )
 
     print(PRIMER_FMT.format("dir", "tm", "ttm", "dg", "pen", "seq"))
@@ -89,6 +90,13 @@ Where:
         help="space separated min-max range for the length to add from '-r' (5' to 3')",
         default=[-1, -1],
         metavar="INT",
+    )
+    parser.add_argument(
+        "-t",
+        type=str,
+        help="sequence to check for offtargets binding sites in",
+        default="",
+        metavar="SEQ",
     )
     parser.add_argument(
         "--version", action="version", version="seqfold {ver}".format(ver=__version__)
