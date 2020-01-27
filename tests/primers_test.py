@@ -29,8 +29,6 @@ class TestPrimers(TestCase):
         self.assertTrue(p2.tm)
         self.assertEqual(p1.tm, p1.tm_total)
         self.assertEqual(p2.tm, p2.tm_total)
-        self.assertTrue(p1.dg)
-        self.assertTrue(p2.dg)
         self.assertTrue(p1.gc)
         self.assertTrue(p2.gc)
         self.assertTrue(p1.fwd)
