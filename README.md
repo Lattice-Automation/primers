@@ -47,15 +47,15 @@ usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [--version] SE
 Create PCR primers for a DNA sequence.
 
 Logs the FWD and REV primer with columns:
-dir, tm, ttm, dg, pen, seq
+    dir, tm, ttm, dg, pen, seq
 
 Where:
-dir = FWD or REV.
-tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
-ttm = The total melting temperature of the primer with added seq (Celsius).
-dg  = The minimum free energy of the primer (kcal/mol).
-pen = The primer's penalty score. Lower is better.
-seq = The sequence of the primer in the 5' to the 3' direction.
+    dir = FWD or REV.
+    tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
+    ttm = The total melting temperature of the primer with added seq (Celsius).
+    dg  = The minimum free energy of the primer (kcal/mol).
+    pen = The primer's penalty score. Lower is better.
+    seq = The sequence of the primer in the 5' to the 3' direction.
 
 positional arguments:
   SEQ                   DNA sequence
@@ -73,8 +73,6 @@ optional arguments:
 
 Selecting primers for a DNA sequence is non-trivial because it's a multi-objective optimization problem. Ideally, pairs of primers for PCR amplification would have similar, ideal tms, low gc%s, low free energies (dgs) and lack off-target binding sites.
 
-### Scoring
-
 In this module, the penalty for each possible primer, p, is calculated as:
 
 ```txt
@@ -88,5 +86,3 @@ PENALTY(p) =
 ```
 
 Each of the optimal (`opt_*`) and penalty (`penalty_*`) parameters is adjustable through the `primers.primers()` function. The primer pair with the lowest combined penalty score is chosen.
-
-Given this module's emphasis on DNA assembly, additional sequences added to the FWD and/or REV primer are considered in the PENALTY calculation.
