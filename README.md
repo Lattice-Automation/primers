@@ -15,7 +15,7 @@ pip install primers
 ```python
 from primers import primers
 
-# add recognition sequences to FWD and REV primers
+# add enzyme recognition sequences to FWD and REV primers: BsaI, BpiI
 fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd="GGTCTC" add_rev="GAAGAC")
 print(fwd.fwd)  # True
 print(fwd.seq)  # GGTCTCAATGAGACAATAGCACACACA; 5' to 3'
@@ -23,8 +23,9 @@ print(fwd.tm)   # 62.4; melting temp
 print(fwd.tm_total)  # 68.6; melting temp with added seq (GGTCTC)
 print(fwd.dg)   # -1.86; minimum free energy of the secondary structure
 
-# add from a range of sequence to the FWD primer
-fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd="GGATCGAGCTTGA", add_fwd_len=(5, 12))
+# add from a range of sequence to the FWD primer: [5, 12] bp
+add_fwd = "GGATCGAGCTTGA"
+fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd=add_fwd, add_fwd_len=(5, 12))
 print(fwd.seq)  # AGCTTGAAATGAGACAATAGCACACACAGC
 print(fwd.tm)   # 62.2
 print(fwd.tm_total)  # 70.0
