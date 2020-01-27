@@ -40,9 +40,6 @@ class TestPrimers(TestCase):
         self.assertTrue(p1.penalty)
         self.assertTrue(p2.penalty)
 
-        print(p1)
-        print(p2)
-
     def test_primers_add_left_fixed(self):
         """Create primers with additional sequence on the left, fixed."""
 
