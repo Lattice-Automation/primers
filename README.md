@@ -72,7 +72,7 @@ optional arguments:
 
 ## Overview
 
-Creating primers for a DNA sequence is non-trivial because there's multi-objective optimization at play. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a formula in which undesired primer characteristics are penalized. The primer pair with the lowest penalty score is created.
+Creating primers for a DNA sequence is non-trivial because it's multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a formula in which undesired primer characteristics are penalized. The primer pair with the lowest penalty score is created.
 
 ### Scoring
 
@@ -106,9 +106,7 @@ penalty_offtarget: float = 20.0
 
 Offtargets are defined as a subsequence within one mismatch of the last 10bp of a primer's 3' end. This is experimentally supported by:
 
-```txt
-Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
-```
+> Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
 
 By default, primers are checked for offtargets within the `seq` parameter passed to `primers.primers(seq)`. But the primers can be checked against another sequence if it's passed through the `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence; for example: a plasmid.
 
