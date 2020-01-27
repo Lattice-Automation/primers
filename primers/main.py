@@ -71,7 +71,7 @@ Where:
         "-fl",
         type=int,
         nargs=2,
-        help="space separated min-max range for the length to add from 'add_fwd' (5' to 3')",
+        help="space separated min-max range for the length to add from '-f' (5' to 3')",
         default=[-1, -1],
         metavar="INT",
     )
@@ -86,7 +86,7 @@ Where:
         "-rl",
         type=int,
         nargs=2,
-        help="space separated min-max range for the length to add from 'add_rev' (5' to 3')",
+        help="space separated min-max range for the length to add from '-r' (5' to 3')",
         default=[-1, -1],
         metavar="INT",
     )

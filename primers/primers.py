@@ -19,7 +19,7 @@ In this module, the penalty for each possible primer, p, is calculated as:
         abs(len(p) - opt_len) * penalty_len +
         abs(p.tm - p.pair.tm) * penalty_tm_diff +
         abs(p.dg) * penalty_dg +
-        p.offtargets * penalty_offtargets
+        p.offtargets * penalty_offtarget
 
 The primer pair with the lowest combined penalty score is chosen.
 
@@ -40,6 +40,7 @@ from logging import warning
 from typing import Tuple, NamedTuple, List, Optional
 
 from seqfold import gc_cache, dg_cache, tm_cache, Cache
+from .offtargets import offtargets
 
 
 LEN_MIN = 15  # min length of the annealing portion of primers
@@ -100,7 +101,7 @@ class PrimerFactory(NamedTuple):
         penalty_tm: Penalty for a large tm difference
         penalty_tm_diff: Penalty for differences between primers in a pair
         penalty_dg: Penalty for very negative free energies
-        penalty_offtargets: Penalty for offtargets
+        penalty_offtarget: Penalty for offtargets
     """
 
     opt_tm: float
@@ -111,7 +112,7 @@ class PrimerFactory(NamedTuple):
     penalty_len: float
     penalty_tm_diff: float
     penalty_dg: float
-    penalty_offtargets: float
+    penalty_offtarget: float
 
     def build(
         self,
@@ -143,10 +144,8 @@ class PrimerFactory(NamedTuple):
         penalty_gc = abs(gc - self.opt_gc) * self.penalty_gc
         penalty_len = abs(len(seq) - self.opt_len) * self.penalty_len
         penalty_dg = abs(dg) * self.penalty_dg
-        penalty_offtargets = offtargets * self.penalty_offtargets
-        penalty = (
-            penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_offtargets
-        )
+        penalty_offtarget = offtargets * self.penalty_offtarget
+        penalty = penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_offtarget
 
         return Primer(
             seq=seq,
@@ -184,6 +183,7 @@ def primers(
     add_rev: str = "",
     add_fwd_len: Tuple[int, int] = (-1, -1),
     add_rev_len: Tuple[int, int] = (-1, -1),
+    offtarget_check: str = "",
     opt_tm: float = 62.0,
     opt_gc: float = 0.5,
     opt_len: int = 22,
@@ -192,7 +192,7 @@ def primers(
     penalty_len: float = 1.0,
     penalty_tm_diff: float = 1.0,
     penalty_dg: float = 2.0,
-    penalty_offtargets: float = 10.0,
+    penalty_offtarget: float = 20.0,
 ) -> Tuple[Primer, Primer]:
     """Create primers for PCR amplification of the sequence.
     
@@ -206,6 +206,7 @@ def primers(
             `add_fwd` (from 3' end)
         add_rev_len: Range (min, max) of number of bp to add from
             `add_rev` (from 3' end)
+        offtarget_check: The sequence to check for offtarget binding sites
         opt_tm: The optimal tm of a primer based on IDT guidelines.
             Excluding added sequence
         opt_gc: The optimal GC ratio of a primer, based on IDT guidelines
@@ -216,16 +217,16 @@ def primers(
         penalty_len: Penalty for differences in primer length
         penalty_diff_tm: Penalty for tm differences between primers
         penalty_dg: Penalty for minimum free energy of a primer
-        penalty_offtargets: Penalty for offtarget binding sites in the `seq`
+        penalty_offtarget: Penalty for offtarget binding sites in the `seq`
     
     Returns:
         (Primer, Primer): Primers for PCR amplification
     """
 
     # parse input
-    seq = _parse(seq)
-    add_fwd = _parse(add_fwd)
-    add_rev = _parse(add_rev)
+    seq, offtarget_check = _parse(seq, offtarget_check)
+    add_fwd, _ = _parse(add_fwd, "")
+    add_rev, _ = _parse(add_rev, "")
     factory = PrimerFactory(
         opt_tm=opt_tm,
         opt_gc=opt_gc,
@@ -235,7 +236,7 @@ def primers(
         penalty_len=penalty_len,
         penalty_tm_diff=penalty_tm_diff,
         penalty_dg=penalty_dg,
-        penalty_offtargets=penalty_offtargets,
+        penalty_offtarget=penalty_offtarget,
     )
 
     # set min/max if additional sequence was provided at FWD/REV
@@ -257,6 +258,7 @@ def primers(
     fwd_primers = _primers(
         factory._replace(opt_len=opt_fwd_len),
         fwd_seq,
+        offtarget_check,
         range(0, add_fwd_max - add_fwd_min + 1),
         range(LEN_MIN + add_fwd_max, LEN_MAX + add_fwd_max),
         True,
@@ -269,6 +271,7 @@ def primers(
     rev_primers = _primers(
         factory._replace(opt_len=opt_rev_len),
         rev_seq,
+        offtarget_check,
         range(0, add_rev_max - add_rev_min + 1),
         range(LEN_MIN + add_rev_max, LEN_MAX + add_rev_min),
         False,
@@ -282,6 +285,7 @@ def primers(
 def _primers(
     factory: PrimerFactory,
     seq: str,
+    offtarget_check: str,
     start_range: range,
     end_range: range,
     fwd: bool,
@@ -292,6 +296,7 @@ def _primers(
     Args:
         factory: Primer factory for creating the primers, assigning score
         seq: The sequence who primers are being created for
+        offtarget_check: the sequence checked for offtargets
         start_range: A range of possible starting indicies
         end_range: A range of possible ending indicies
         fwd: Whether these primers are in the FWD direction
@@ -306,6 +311,7 @@ def _primers(
     gc = gc_cache(seq)
     tm = tm_cache(seq)
     dg = dg_cache(seq)
+    ot = offtargets(seq, offtarget_check)
 
     assert len(gc) == len(tm) == len(dg)
 
@@ -320,8 +326,9 @@ def _primers(
             p_tm_total = tm[s][e]
             p_gc = gc[s][e]
             p_dg = dg[s][e]
+            p_ot = ot[e]
 
-            ps[s][e] = factory.build(p_seq, p_tm, p_tm_total, p_gc, p_dg, fwd, 0)
+            ps[s][e] = factory.build(p_seq, p_tm, p_tm_total, p_gc, p_dg, fwd, p_ot)
 
     return ps
 
@@ -382,13 +389,14 @@ def _choose(
     return min_fwd, min_rev
 
 
-def _parse(seq: str) -> str:
+def _parse(seq: str, offtarget_check: str) -> Tuple[str, str]:
     """Validate and parse the input sequence.
 
     Ensure it's just DNA, uppercase it, return. If it's a BioRecord, get sequence.
 
     Args:
         seq: Template DNA sequence
+        offtarget_check: The sequence that's checked for offtargets
     
     Raises:
         ValueError: If invalid bases are in the DNA, anything other than {ATGC}
@@ -401,15 +409,18 @@ def _parse(seq: str) -> str:
         seq = str(seq.seq)  # type: ignore
 
     seq = seq.upper()
+    offtarget_check = offtarget_check or seq
 
-    actual = set(seq)
-    diff = [c for c in actual if c not in "ATGC"]
+    if "SeqRecord" in str(type(offtarget_check)):
+        offtarget_check = str(offtarget_check.seq).upper()  # type: ignore
+
+    diff = {c for c in seq if c not in "ATGC"}
 
     if diff:
         desc = ",".join(diff)
         raise ValueError(f"Invalid non-DNA bases found: {desc}")
 
-    return seq
+    return seq, offtarget_check
 
 
 def _parse_add_len(add: str, add_len: Tuple[int, int]) -> Tuple[int, int]:
