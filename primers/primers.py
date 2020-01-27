@@ -138,6 +138,7 @@ class PrimerFactory(NamedTuple):
             Primer: A Primer with a penalty score
         """
 
+        dg = min(dg, 0)
         penalty_tm = abs(tm - self.opt_tm) * self.penalty_tm
         penalty_gc = abs(gc - self.opt_gc) * self.penalty_gc
         penalty_len = abs(len(seq) - self.opt_len) * self.penalty_len
