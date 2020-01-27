@@ -42,7 +42,7 @@ $ primers AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA -f GGTCTC -r GAAGAC
 
 ```txt
 $ primers --help
-usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [--version] SEQ
+usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [--version] SEQ
 
 Create PCR primers for a DNA sequence.
 
@@ -58,14 +58,15 @@ Where:
     seq = The sequence of the primer in the 5' to the 3' direction.
 
 positional arguments:
-  SEQ                   DNA sequence
+  SEQ          DNA sequence
 
 optional arguments:
   -h, --help   show this help message and exit
   -f SEQ       additional sequence to add to FWD primer (5' to 3')
-  -fl INT INT  space separated min-max range for the length to add from 'add_fwd' (5' to 3')
+  -fl INT INT  space separated min-max range for the length to add from '-f' (5' to 3')
   -r SEQ       additional sequence to add to REV primer (5' to 3')
-  -rl INT INT  space separated min-max range for the length to add from 'add_rev' (5' to 3')
+  -rl INT INT  space separated min-max range for the length to add from '-r' (5' to 3')
+  -t SEQ       sequence to check for offtargets binding sites
   --version    show program's version number and exit
 ```
 

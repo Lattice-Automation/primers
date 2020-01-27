@@ -94,7 +94,7 @@ Where:
     parser.add_argument(
         "-t",
         type=str,
-        help="sequence to check for offtargets binding sites in",
+        help="sequence to check for offtargets binding sites",
         default="",
         metavar="SEQ",
     )
