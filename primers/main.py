@@ -62,7 +62,6 @@ seq = The sequence of the primer in the 5' to the 3' direction.
     parser.add_argument("seq", type=str, metavar="SEQ", help="DNA sequence")
     parser.add_argument(
         "-f",
-        "--fwd",
         type=str,
         help="additional sequence to add to FWD primer (5' to 3')",
         default="",
@@ -70,7 +69,6 @@ seq = The sequence of the primer in the 5' to the 3' direction.
     )
     parser.add_argument(
         "-fl",
-        "--flen",
         type=int,
         nargs=2,
         help="space separated min-max range for the length to add from 'add_fwd' (5' to 3')",
@@ -79,7 +77,6 @@ seq = The sequence of the primer in the 5' to the 3' direction.
     )
     parser.add_argument(
         "-r",
-        "--rev",
         type=str,
         help="additional sequence to add to REV primer (5' to 3')",
         default="",
@@ -87,7 +84,6 @@ seq = The sequence of the primer in the 5' to the 3' direction.
     )
     parser.add_argument(
         "-rl",
-        "--rlen",
         type=int,
         nargs=2,
         help="space separated min-max range for the length to add from 'add_rev' (5' to 3')",

@@ -60,14 +60,12 @@ positional arguments:
   SEQ                   DNA sequence
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -f SEQ, --fwd SEQ     additional sequence to add to FWD primer (5' to 3')
-  -fl INT INT, --flen INT INT
-                        space separated min-max range for the length to add from 'add_fwd' (5' to 3')
-  -r SEQ, --rev SEQ     additional sequence to add to REV primer (5' to 3')
-  -rl INT INT, --rlen INT INT
-                        space separated min-max range for the length to add from 'add_rev' (5' to 3')
-  --version             show program's version number and exit
+  -h, --help   show this help message and exit
+  -f SEQ       additional sequence to add to FWD primer (5' to 3')
+  -fl INT INT  space separated min-max range for the length to add from 'add_fwd' (5' to 3')
+  -r SEQ       additional sequence to add to REV primer (5' to 3')
+  -rl INT INT  space separated min-max range for the length to add from 'add_rev' (5' to 3')
+  --version    show program's version number and exit
 ```
 
 ## Overview
