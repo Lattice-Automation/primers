@@ -16,6 +16,7 @@ In this module, the penalty for each possible primer, p, is calculated as:
     PENALTY(p) =
         abs(p.tm - opt_tm) * penalty_tm +
         abs(p.gc - opt_gc) * penalty_gc +
+        abs(len(p) - opt_len) * penalty_len +
         abs(p.tm - p.pair.tm) * penalty_tm_diff +
         abs(p.dg) * penalty_dg +
         p.offtargets * penalty_offtargets
@@ -44,27 +45,46 @@ from seqfold import gc_cache, dg_cache, tm_cache, Cache
 LEN_MIN = 15  # min length of the annealing portion of primers
 LEN_MAX = 32  # max length of the annealing portion of primers, based on IDT guidelines
 
+PRIMER_FMT: str = "{:>5} {:>5} {:>5} {:>6} {:>5}  {}"
+"""{fwd} {tm} {tm_total} {dg} {penalty} {seq}"""
+
 
 class Primer(NamedTuple):
-    """
-    A single Primer for PCR amplification of a DNA sequence.
+    """A single Primer for PCR amplification of a DNA sequence.
 
     Attributes:
         seq: The DNA sequence of the primer; 5' to 3'
-        tm: The annealing temperature of the primer
+        tm: The melting temperature of the primer (Celsius):
+            for the binding region pre-addition of added sequence
+        tm_total: The melting temperature of the total primer (Celsius):
+            the tm of the primer with the binding and added sequence
         gc: The GC percentage of the primer
         dg: The minimum free energy of the primer
-        fwd: Whether the primer anneals in the FWD direction of the template sequence
+        fwd: Whether the primer anneals in the FWD
+            direction of the template sequence
         penalty: The penalty score for this primer
     """
 
     seq: str
     tm: float
+    tm_total: float
     gc: float
     dg: float
     fwd: bool
     offtargets: int
     penalty: float
+
+    def __str__(self) -> str:
+        """Create a string representation of the primer."""
+
+        return PRIMER_FMT.format(
+            "FWD" if self.fwd else "REV",
+            self.tm,
+            self.tm_total,
+            round(self.dg, 2),
+            round(self.penalty, 2),
+            self.seq,
+        )
 
 
 class PrimerFactory(NamedTuple):
@@ -88,18 +108,27 @@ class PrimerFactory(NamedTuple):
     opt_len: int
     penalty_tm: float
     penalty_gc: float
+    penalty_len: float
     penalty_tm_diff: float
     penalty_dg: float
     penalty_offtargets: float
 
     def build(
-        self, seq: str, tm: float, gc: float, dg: float, fwd: bool, offtargets: int
+        self,
+        seq: str,
+        tm: float,
+        tm_total: float,
+        gc: float,
+        dg: float,
+        fwd: bool,
+        offtargets: int,
     ) -> Primer:
         """Create a Primer with a scored penalty.
         
         Args:
             seq: Sequence of the primer, 5' to 3'
             tm: Tm of the created primer, Celsius
+            tm_total: Tm of the created primer, with added sequence, Celsius
             gc: GC ratio of the created primer
             dg: Minimum free energy (kcal/mol) of the folded DNA sequence
             fwd: Whether this is a FWD primer
@@ -111,13 +140,17 @@ class PrimerFactory(NamedTuple):
 
         penalty_tm = abs(tm - self.opt_tm) * self.penalty_tm
         penalty_gc = abs(gc - self.opt_gc) * self.penalty_gc
+        penalty_len = abs(len(seq) - self.opt_len) * self.penalty_len
         penalty_dg = abs(dg) * self.penalty_dg
         penalty_offtargets = offtargets * self.penalty_offtargets
-        penalty = penalty_tm + penalty_gc + penalty_dg + penalty_offtargets
+        penalty = (
+            penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_offtargets
+        )
 
         return Primer(
             seq=seq,
             tm=tm,
+            tm_total=tm_total,
             gc=gc,
             dg=dg,
             fwd=fwd,
@@ -146,18 +179,19 @@ class PrimerFactory(NamedTuple):
 
 def primers(
     seq: str,
-    add_fwd="",
-    add_rev="",
-    add_fwd_len=(-1, -1),
-    add_rev_len=(-1, -1),
-    opt_tm=62.0,
-    opt_gc=0.5,
-    opt_len=22,
-    penalty_tm=1.0,
-    penalty_gc=5.0,
-    penalty_tm_diff=1.0,
-    penalty_dg=2.0,
-    penalty_offtargets=10.0,
+    add_fwd: str = "",
+    add_rev: str = "",
+    add_fwd_len: Tuple[int, int] = (-1, -1),
+    add_rev_len: Tuple[int, int] = (-1, -1),
+    opt_tm: float = 62.0,
+    opt_gc: float = 0.5,
+    opt_len: int = 22,
+    penalty_tm: float = 1.0,
+    penalty_gc: float = 3.0,
+    penalty_len: float = 1.0,
+    penalty_tm_diff: float = 1.0,
+    penalty_dg: float = 2.0,
+    penalty_offtargets: float = 10.0,
 ) -> Tuple[Primer, Primer]:
     """Create primers for PCR amplification of the sequence.
     
@@ -167,14 +201,18 @@ def primers(
     Keyword Args:
         add_fwd: Additional sequence to add to FWD primer (5' to 3')
         add_rev: Additional sequence to add to REV primer (5' to 3')
-        add_fwd_len: Range (min, max) of number of bp to add from `add_fwd` (from 3' end)
-        add_rev_len: Range (min, max) of number of bp to add from `add_rev` (from 3' end)
-        opt_tm: The optimal tm of a primer based on IDT guidelines. Excluding added sequence
+        add_fwd_len: Range (min, max) of number of bp to add from
+            `add_fwd` (from 3' end)
+        add_rev_len: Range (min, max) of number of bp to add from
+            `add_rev` (from 3' end)
+        opt_tm: The optimal tm of a primer based on IDT guidelines.
+            Excluding added sequence
         opt_gc: The optimal GC ratio of a primer, based on IDT guidelines
         opt_len: The optimal length of a primer, excluding additional
             sequence added via `add_fwd` and `add_rev`
         penalty_tm: Penalty for tm differences from optimal
         penalty_gc: Penalty for differences between primers and optimal GC ratio
+        penalty_len: Penalty for differences in primer length
         penalty_diff_tm: Penalty for tm differences between primers
         penalty_dg: Penalty for minimum free energy of a primer
         penalty_offtargets: Penalty for offtarget binding sites in the `seq`
@@ -193,6 +231,7 @@ def primers(
         opt_len=opt_len,
         penalty_tm=penalty_tm,
         penalty_gc=penalty_gc,
+        penalty_len=penalty_len,
         penalty_tm_diff=penalty_tm_diff,
         penalty_dg=penalty_dg,
         penalty_offtargets=penalty_offtargets,
@@ -211,33 +250,43 @@ def primers(
         err = f"Template sequence length is too short: {len(seq_full)}bp < {LEN_MAX}bp"
         raise ValueError(err)
 
-    # create 2D matrixes of primers in the FWD and REV directions
+    # create two 2D arrays of primers in the FWD and REV directions
+    opt_fwd_len = round(opt_len + (add_fwd_min + add_fwd_max) / 2)
     fwd_seq = seq_full[: add_fwd_max + LEN_MAX]
     fwd_primers = _primers(
-        factory,
+        factory._replace(opt_len=opt_fwd_len),
         fwd_seq,
         range(0, add_fwd_max - add_fwd_min + 1),
-        range(add_fwd_max + LEN_MIN, add_fwd_max + LEN_MAX + 1),
+        range(LEN_MIN + add_fwd_max, LEN_MAX + add_fwd_max),
         True,
+        add_fwd_max,
     )
 
+    opt_rev_len = round(opt_len + (add_rev_min + add_rev_max) / 2)
     rev_seq = _rc(seq_full)
     rev_seq = rev_seq[: add_rev_max + LEN_MAX]
     rev_primers = _primers(
-        factory,
+        factory._replace(opt_len=opt_rev_len),
         rev_seq,
         range(0, add_rev_max - add_rev_min + 1),
-        range(add_rev_max + LEN_MIN, add_rev_min + LEN_MAX + 1),
+        range(LEN_MIN + add_rev_max, LEN_MAX + add_rev_min),
         False,
+        add_rev_max,
     )
 
+    # choose the pair with the smallest total penalty
     return _choose(factory, fwd_primers, rev_primers)
 
 
 def _primers(
-    factory: PrimerFactory, seq: str, start_range: range, end_range: range, fwd: bool
+    factory: PrimerFactory,
+    seq: str,
+    start_range: range,
+    end_range: range,
+    fwd: bool,
+    add_len: int,
 ) -> List[List[Optional[Primer]]]:
-    """Return a matrix of penalties for (i, j) where (i, j) are the start/end indexes
+    """Return a matrix of primers for (i, j) where (i, j) are the start/end indexes
     
     Args:
         factory: Primer factory for creating the primers, assigning score
@@ -245,6 +294,7 @@ def _primers(
         start_range: A range of possible starting indicies
         end_range: A range of possible ending indicies
         fwd: Whether these primers are in the FWD direction
+        add_len: The number of additional bp added to the sequence's end
     
     Returns:
         List[List[Primer]]: A 2D matrix of Primers with penalties. None if no
@@ -259,14 +309,18 @@ def _primers(
     assert len(gc) == len(tm) == len(dg)
 
     ps: List[List[Optional[Primer]]] = []
-    for _ in range(gc):
+    for _ in range(len(gc)):
         ps.append([None] * len(gc))
 
     for s in start_range:
         for e in end_range:
-            ps[s][e] = factory.build(
-                seq[s : e + 1], tm[s][e], gc[s][e], dg[s][e], fwd, 0
-            )
+            p_seq = seq[s : e + 1]
+            p_tm = tm[s + add_len][e]
+            p_tm_total = tm[s][e]
+            p_gc = gc[s][e]
+            p_dg = dg[s][e]
+
+            ps[s][e] = factory.build(p_seq, p_tm, p_tm_total, p_gc, p_dg, fwd, 0)
 
     return ps
 
@@ -311,16 +365,20 @@ def _choose(
     if not ranked_rev:
         raise RuntimeError("Failed to create any primers in the REV direction")
 
-    ranked_pairs: List[Tuple[float, Primer, Primer]] = []
+    min_penalty = float("inf")
+    min_fwd, min_rev = None, None
     for _, fwd in heapq.nsmallest(10, ranked_fwd):
         for _, rev in heapq.nsmallest(10, ranked_rev):
             new_fwd, new_rev = factory.build_pair(fwd, rev)
-            heapq.heappush(
-                ranked_pairs, (new_fwd.penalty + new_rev.penalty, new_fwd, new_rev)
-            )
+            new_penalty = new_fwd.penalty + new_rev.penalty
+            if new_penalty < min_penalty:
+                min_penalty = new_penalty
+                min_fwd, min_rev = fwd, rev
 
-    _, best_fwd, best_rev = ranked_pairs[0]
-    return best_fwd, best_rev
+    if not min_fwd or not min_rev:
+        raise RuntimeError("Failed to create a pair of PCR primers")
+
+    return min_fwd, min_rev
 
 
 def _parse(seq: str) -> str:
@@ -408,4 +466,4 @@ def _rc(seq: str) -> str:
     """
 
     rc = {"A": "T", "T": "A", "G": "C", "C": "G"}
-    return "".join(rc[c] for c in seq)
+    return "".join(rc[c] for c in reversed(seq))
