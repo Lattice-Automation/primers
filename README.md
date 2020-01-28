@@ -53,7 +53,7 @@ Where:
     dir = FWD or REV.
     tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
     ttm = The total melting temperature of the primer with added seq (Celsius).
-    dg  = The minimum free energy of the primer (kcal/mol).
+    dg  = The minimum free energy of the primer's secondary structure (kcal/mol).
     pen = The primer's penalty score. Lower is better.
     seq = The sequence of the primer in the 5' to the 3' direction.
 
