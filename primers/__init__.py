@@ -9,5 +9,5 @@ except DistributionNotFound:
 finally:
     del get_distribution, DistributionNotFound
 
-from .primers import primers, Primer
+from .primers import primers, Primer, LEN_MAX, LEN_MIN
 

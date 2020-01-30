@@ -1,6 +1,10 @@
 # primers
 
-This is a tool for making PCR primers for DNA sequences. `primers`' emphasis is on ease-of-use and DNA assembly. Adding additional sequence to 5' end of the FWD and REV primer is easy with `primers`. This is a common requirement for Gibson assembly and Golden Gate cloning. Finally, it has a permissive MIT license where other primer design tools, like Primer3, don't.
+This is a tool for creating PCR primers. It has an emphasis on DNA assembly and makes it easy to add sequences to the end of PCR fragments (e.g. homology for Gibson assembly or restriction enzyme recognition sequences for Golden Gate).
+
+`primers` quickly creates pairs with optimized lengths, Tms, GC ratios, secondary structures (minimum free energies) and without off-target binding sites. Each returned primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence, and "tm_total", the melting temperature for the entire primer with additional sequence added to its 5' end.
+
+Unlike the most used alternative, Primer3, `primers` has a permissive MIT license and support for adding sequence to the 5' ends of primers.
 
 ## Installation
 
@@ -70,7 +74,7 @@ optional arguments:
   --version    show program's version number and exit
 ```
 
-## Overview
+## Algorithm
 
 Creating primers for a DNA sequence is non-trivial because it's multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a formula in which undesired primer characteristics are penalized. The primer pair with the lowest penalty score is created.
 
@@ -102,13 +106,13 @@ penalty_dg: float = 2.0
 penalty_offtarget: float = 20.0
 ```
 
-### Offtargets
+### Off-targets
 
-Offtargets are defined as a subsequence within one mismatch of the last 10bp of a primer's 3' end. This is experimentally supported by:
+Off-targets are defined as a subsequence within one mismatch of the last 10bp of a primer's 3' end. This is experimentally supported by:
 
 > Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
 
-By default, primers are checked for offtargets within the `seq` parameter passed to `primers.primers(seq)`. But the primers can be checked against another sequence if it's passed through the `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence; for example: a plasmid.
+By default, primers are checked for off-targets within the `seq` parameter passed to `primers.primers(seq)`. But the primers can be checked against another sequence if it's passed through the `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence; for example: a plasmid.
 
 ```python
 seq = "AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA"
