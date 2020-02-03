@@ -1,6 +1,6 @@
 # primers
 
-This is a tool for creating PCR primers. It has an emphasis on DNA assembly and makes it easy to add sequences to the end of PCR fragments (e.g. homology for Gibson assembly or restriction enzyme recognition sequences for Golden Gate).
+This is a tool for creating PCR primers. It has an emphasis on DNA assembly and makes it easy to add sequences to the end of PCR fragments. This is part of [overlap extension polymerase chain reaction](https://en.wikipedia.org/wiki/Overlap_extension_polymerase_chain_reaction) and preparing unstandardized DNA sequences for Gibson assembly and Golden gate cloning.
 
 `primers` quickly creates pairs with optimized lengths, Tms, GC ratios, secondary structures (minimum free energies) and without off-target binding sites. Each returned primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence, and "tm_total", the melting temperature for the entire primer with additional sequence added to its 5' end.
 
