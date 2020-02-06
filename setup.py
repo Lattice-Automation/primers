@@ -18,7 +18,7 @@ except VersionConflict:
 
 setup(
     name="primers",
-    version="0.2.4",
+    version="0.2.5",
     description="Create PCR primers optimal for lengths, tms, gc%s and free energies",
     author="JJTimmons",
     author_email="jtimmons@latticeautomation.com",
