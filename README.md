@@ -76,7 +76,7 @@ optional arguments:
 
 ## Algorithm
 
-Creating primers for a DNA sequence is non-trivial because it's multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a formula in which undesired primer characteristics are penalized. The primer pair with the lowest penalty score is created.
+Creating primers for a DNA sequence is non-trivial because it's multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a linear function that penalizes undesired characteristics. The primer pair with the lowest combined penalty is created.
 
 ### Scoring
 

@@ -19,7 +19,7 @@ except VersionConflict:
 setup(
     name="primers",
     version="0.2.4",
-    description="Create PCR primers optimized for length, tm, gc and free energy",
+    description="Create PCR primers optimal for lengths, tms, gc%s and free energies",
     author="JJTimmons",
     author_email="jtimmons@latticeautomation.com",
     license="mit",
@@ -34,7 +34,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Environment :: Console",
     ],
-    entry_points={"console_scripts": ["primers=primers.main:run"],},
+    entry_points={"console_scripts": ["primers=primers.main:run"]},
     zip_safe=False,
     extra_require={"dev": ["black", "pylint", "bumpversion"]},
     python_requires=">=3.0",
