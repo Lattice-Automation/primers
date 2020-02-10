@@ -84,12 +84,12 @@ The penalty for each possible primer, p, is calculated as:
 
 ```txt
 PENALTY(p) =
-    abs(p.tm - opt_tm) * penalty_tm +
-    abs(p.gc - opt_gc) * penalty_gc +
-    abs(len(p) - opt_len) * penalty_len +
-    abs(p.tm - p.pair.tm) * penalty_tm_diff +
-    abs(p.dg) * penalty_dg +
-    p.offtargets * penalty_offtarget
+    abs(p.tm - opt_tm) * penalty_tm +   // tm diff
+    abs(p.gc - opt_gc) * penalty_gc +   // GC ratio diff
+    abs(len(p) - opt_len) * penalty_len +      // length diff
+    abs(p.tm - p.pair.tm) * penalty_tm_diff +  // tm diff between primers
+    abs(p.dg) * penalty_dg +            // free energy
+    p.offtargets * penalty_offtarget    // number of off-targets
 ```
 
 Each of the optimal (`opt_*`) and penalty (`penalty_*`) parameters is adjustable through the `primers.primers()` function. The defaults are below.
