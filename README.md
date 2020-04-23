@@ -20,7 +20,7 @@ pip install primers
 from primers import primers
 
 # add enzyme recognition sequences to FWD and REV primers: BsaI, BpiI
-fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd="GGTCTC" add_rev="GAAGAC")
+fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd="GGTCTC", add_rev="GAAGAC")
 print(fwd.fwd)  # True
 print(fwd.seq)  # GGTCTCAATGAGACAATAGCACACACA; 5' to 3'
 print(fwd.tm)   # 62.4; melting temp
