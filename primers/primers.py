@@ -409,7 +409,7 @@ def _parse(seq: str, offtarget_check: str) -> Tuple[str, str]:
         seq = str(seq.seq)  # type: ignore
 
     seq = seq.upper()
-    offtarget_check = offtarget_check or seq
+    offtarget_check = (offtarget_check or seq).upper()
 
     if "SeqRecord" in str(type(offtarget_check)):
         offtarget_check = str(offtarget_check.seq).upper()  # type: ignore

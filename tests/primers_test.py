@@ -87,3 +87,10 @@ class TestPrimers(TestCase):
         self.assertEqual((n, n), l1)
         self.assertEqual((5, n), l2)
         self.assertEqual((0, 5), l3)
+
+    def test_primers_parent(self):
+        """Create primers given a parent with diff-case sequence."""
+
+        ps = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", offtarget_check="ggaattacgtAATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAAggaccagttacagga")
+
+        self.assertTrue(ps)
