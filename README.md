@@ -2,12 +2,12 @@
 
 This is a small, straightforward tool for creating PCR primers. Its target use-case is DNA assembly.
 
-Reasons to choose it over [Primer3](https://github.com/primer3-org/primer3) include:
+Reasons to choose `primers` instead of [Primer3](https://github.com/primer3-org/primer3) include its:
 
-- **simplicity**: It is a simple Python CLI/library with a single dependency ([seqfold](https://github.com/Lattice-Automation/seqfold)). This README is all you need for documentation ([versus](https://primer3.org/manual.html)).
-- **features**: Unlike Primer3, it can choose primers while also adding base pairs to the 5' ends of primers (for Gibson or Golden Gate).
-- **license**: It has a permissive, business-friendly license (MIT) instead of a copyleft GPL v2.
-- **interface**: The Python library accepts and create primers for [Biopython `Seq` classes](https://biopython.org/wiki/Seq). It also supports JSON output to easily integrate with applications.
+- **simplicity**: It is a small and simple Python CLI/library with a single dependency ([seqfold](https://github.com/Lattice-Automation/seqfold)). It is easier to install and use.
+- **features**: You can design primers while adding base pairs to the 5' ends of primers (for Gibson or Golden Gate).
+- **license**: It has a permissive license (MIT) instead of a copyleft GPL v2 license.
+- **interface**: The Python library accepts and create primers for [Biopython `Seq`](https://biopython.org/wiki/Seq) classes. It supports JSON output for easy integration with other applications.
 
 ## Installation
 
@@ -17,9 +17,16 @@ pip install primers
 
 ## Usage
 
-`primers` creates primer pairs with optimized lengths, tms, GC ratios, secondary structures (minimum free energies), and minimal off-target binding sites. Each primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence and "tm_total", the melting temperature for the entire primer with any additional sequence added to its 5' end.
+`primers` chooses pairs while optimizing for length, tm, GC ratio, secondary structure, and off-target binding. In the simplest case, you just pass the sequence you want to amplify:
 
-Additional sequence is added to the 5' end of primers via the `add_fwd/add_rev` args (`-f/-r` with CLI). By default, it will prepend the entire additional sequence. If you want it to choose the best subsequence to add to the 5' end (factoring in the features dicussed [below](#scoring)), allow it to choose from a range of indicies via the `add_fwd_len/add_rev_len` (`-fl/-rl` with CLI).
+```bash
+$ primers create CTACTAATAGCACACACGGGGACTAGCATCTATCTCAGCTACGATCAGCATC
+  dir    tm   ttm  gc     dg     p  seq
+  FWD  63.6  63.6 0.5      0   2.6  CTACTAATAGCACACACGGG
+  REV  63.2  63.2 0.5  -0.16  1.52  GATGCTGATCGTAGCTGAGATA
+```
+
+Additional sequence is added to the 5' end of primers via the `add_fwd/add_rev` args (`-f/-r` with CLI). By default, it will prepend the entire additional sequence. If you want it to choose the best subsequence to add to the 5' end (factoring in the features dicussed [below](#scoring)), allow it to choose from a range of indicies via the `add_fwd_len/add_rev_len` (`-fl/-rl` with CLI). Each primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence and "tm_total", the melting temperature for the entire primer including the additional sequence added to primers' 5' end.
 
 ### Python
 
@@ -63,7 +70,7 @@ options:
 
 #### Table Output Format
 
-By default, the primers are logged in table format in rows of `dir, tm, ttm, gc, dg, pen, seq` where:
+By default, the primers are logged in table format in rows of `dir, tm, ttm, gc, dg, p, seq` where:
 
 - dir: FWD or REV
 - tm: the melting temperature of the annealing portion of the primer (Celsius)
@@ -85,7 +92,7 @@ $ primers create -f GGTCTC -r GAAGAC AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA
 The `--json` flag prints primers in JSON format with more details on scoring. The example below is truncated for clarity:
 
 ```txt
-$ primers create -r GGTCTC --json $SEQ | jq
+$ primers create --json CTACTAATAGCACACACGGGGACTAGCATCTATCTCAGCTACGATCAGCATC | jq
 [
   {
     "seq": "CTACTAATAGCACACACGGG",
@@ -111,13 +118,13 @@ $ primers create -r GGTCTC --json $SEQ | jq
 
 ## Algorithm
 
-Choosing PCR primers requires optimizing for a few different features. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, choosing amongst those (sometimes competing) goals is accomplished with a linear function that penalizes undesirable characteristics. The primer pair with the lowest combined penalty is chosen.
+Choosing PCR primers requires optimizing for a few different characteristics. Ideally, pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, choosing amongst those (sometimes competing) goals is accomplished with a linear function that penalizes undesirable characteristics. The primer pair with the lowest combined penalty is chosen.
 
 ### Scoring
 
 The penalty for each possible primer, `p`, is calculated as:
 
-```txtf
+```txt
 PENALTY(p) =
     abs(p.tm - optimal_tm) * penalty_tm +     // penalize each deg of suboptimal melting temperature
     abs(p.gc - optimal_gc) * penalty_gc +     // penalize each percentage point of suboptimal GC ratio
@@ -127,7 +134,7 @@ PENALTY(p) =
     p.offtarget_count * penalty_offtarget     // penalize each off-target binding site
 ```
 
-Each of the optimal (`optimal_*`) and penalty (`penalty_*`) parameters is adjustable through the `primers.primers()` function. The defaults are below.
+Each of the optimal (`optimal_*`) and penalty (`penalty_*`) parameters is adjustable in the `primers.create()` function. The defaults are below:
 
 ```python
 optimal_tm: float = 62.0
@@ -143,7 +150,7 @@ penalty_offtarget: float = 20.0
 
 #### Scoring Existing Primers
 
-If you already have primers and you want to see their features and penalty score, use the `primers score` sub-command:
+If you already have primers, and you want to see their features and penalty score, use the `primers score` command:
 
 ```txt
 $ primers score --json GGTCTCAATGAGACAATAGCACACAC GAAGACTTTCGTATGCTGACCTAG | jq
@@ -195,12 +202,14 @@ Usually, off-target binding sites should be avoided. In `primers`, off-target bi
 
 > Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
 
-By default, primers are checked for off-targets within the `seq` parameter passed to `primers.create(seq)`. But the primers can be checked against another sequence if it is passed to the optional `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence like a plasmid.
+By default, primers are checked for off-targets within the `seq` parameter passed to `create(seq)`. But the primers can be checked against another sequence if it is passed to the optional `offtarget_check` argument (`-t` for CLI). This is useful when PCR'ing a subsequence of a larger DNA sequence like a plasmid.
 
 ```python
-seq = "AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA"
-parent = "ggaattacgtAATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAAggaccagttacagga"
+from primers import create
 
-# primers are checked for offtargets in `parent`
-fwd, rev = primers(seq, offtarget_check=parent)
+seq = "AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA"
+seq_parent = "ggaattacgtAATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAAggaccagttacagga"
+
+# primers are checked for offtargets in `seq_parent`
+fwd, rev = create(seq, offtarget_check=seq_parent)
 ```
