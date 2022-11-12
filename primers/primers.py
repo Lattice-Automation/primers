@@ -1,30 +1,4 @@
-"""Create primers to PCR amplify a DNA sequence.
-
-Primers are used to PCR amplify DNA sequences. This `primers` python module
-is made with synthetic biology and DNA assembly in mind, specifically.
-It makes it easy to PCR amplify a DNA sequence while adding new sequences to its ends for:
-
-1. adding homology for neighboring fragments (eg: Gibson Assembly)
-2. adding restriction enzyme sites (eg: Golden Gate cloning).
-
-Selecting primers for a DNA sequence is non-trivial because it's
-a multi-objective optimization problem. Ideally, pairs of primers
-for PCR amplification would have similar, ideal tms, low gc%s, low
-free energies (dgs) and lack off-target binding sites.
-
-The primer pair with the lowest combined penalty score is chosen.
-
-Given this module's emphasis on DNA assembly, additional sequences added to the FWD and/or REV primer
-are considered in the PENALTY calculation.
-
-An offtarget binding site of a primer is defined as a subsequence
-within one mismatch of the last 10bp of the primer's 3' end. This is experimentally
-supported by:
-
-    Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of
-    position and type of single mismatch on single base primer extension.
-    Journal of microbiological methods, 77(3), 267-275.
-"""
+"""Create or score PCR primers"""
 
 import heapq
 from logging import warning
@@ -222,6 +196,94 @@ class PrimerFactory(NamedTuple):
         )
 
         return new_fwd, new_rev
+
+
+def score(
+    fwd: str,
+    rev: str = "",
+    offtarget_check: str = "",
+    optimal_tm: float = 62.0,
+    optimal_gc: float = 0.5,
+    optimal_len: int = 22,
+    penalty_tm: float = 1.0,
+    penalty_gc: float = 0.2,
+    penalty_len: float = 0.5,
+    penalty_tm_diff: float = 1.0,
+    penalty_dg: float = 2.0,
+    penalty_off_target: float = 20.0,
+) -> Tuple[Primer, Optional[Primer]]:
+    """Score primers from their sequence.
+
+    Use-case: you already have primers and want to know their characteristics and scoring.
+
+    Args:
+        fwd: the sequence of the first primer
+
+    Keyword Args:
+        rev: optional sequence of the second primer
+        add_fwd: additional sequence to add to FWD primer (5' to 3')
+        add_rev: additional sequence to add to REV primer (5' to 3')
+        add_fwd_len: range (min, max) of number of bp to add from
+            `add_fwd` (from 3' end)
+        add_rev_len: range (min, max) of number of bp to add from
+            `add_rev` (from 3' end)
+        offtarget_check: the sequence to check for offtarget binding sites
+        optimal_tm: the optimal tm of a primer based on IDT guidelines.
+            Excluding added sequence
+        optimal_gc: the optimal GC ratio of a primer, based on IDT guidelines
+        optimal_len: the optimal length of a primer, excluding additional
+            sequence added via `add_fwd` and `add_rev`
+        penalty_tm: penalty for tm differences from optimal
+        penalty_gc: penalty for each percentage point diff between primers
+            and the optimal GC ratio
+        penalty_len: penalty for differences in primer length
+        penalty_diff_tm: penalty for tm differences between primers
+        penalty_dg: penalty for minimum free energy of a primer
+        penalty_off_target: penalty for offtarget binding sites in the `seq`
+    """
+
+    _, off_target_check = _parse("", offtarget_check)
+
+    factory = PrimerFactory(
+        optimal_tm=optimal_tm,
+        optimal_gc=optimal_gc,
+        optimal_len=optimal_len,
+        penalty_tm=penalty_tm,
+        penalty_gc=penalty_gc,
+        penalty_len=penalty_len,
+        penalty_tm_diff=penalty_tm_diff,
+        penalty_dg=penalty_dg,
+        penalty_off_target=penalty_off_target,
+    )
+
+    fwd_primers = _primers(
+        factory=factory,
+        seq=fwd,
+        offtarget_check=off_target_check,
+        start_range=range(0, 1),
+        end_range=range(len(fwd) - 1, len(fwd)),
+        fwd=True,
+        add_len=0,
+    )
+    fwd_primer = fwd_primers[0][-1]
+    assert fwd_primer
+
+    if not rev:
+        return (fwd_primer, None)
+
+    rev_primers = _primers(
+        factory=factory,
+        seq=rev,
+        offtarget_check=off_target_check,
+        start_range=range(0, 1),
+        end_range=range(len(rev) - 1, len(rev)),
+        fwd=False,
+        add_len=0,
+    )
+    rev_primer = rev_primers[0][-1]
+    assert rev_primer
+
+    return factory.build_pair(fwd_primer, rev_primer)
 
 
 def primers(

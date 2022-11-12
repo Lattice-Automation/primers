@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from primers import primers, Primer
+from primers import primers, score, Primer
 from primers.primers import _rc, _parse_add_len, LEN_MIN, LEN_MAX
 
 
@@ -97,3 +97,26 @@ class TestPrimers(TestCase):
         )
 
         self.assertTrue(ps)
+
+    def test_primers_score(self):
+        """Score an existing pair of primers."""
+
+        fwd, rev = score(
+            "GGTCTCAATGAGACAATAGCACACAC",
+            "GAAGACTTTCGTATGCTGACCTAG",
+            offtarget_check="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
+        )
+
+        self.assertAlmostEqual(fwd.penalty, 11, delta=3)
+        self.assertAlmostEqual(rev.penalty, 6, delta=3)
+
+    def test_primers_score_only_fwd(self):
+        """Score an existing pair of primers."""
+
+        fwd, rev = score(
+            "GGTCTCAATGAGACAATAGCACACAC",
+            offtarget_check="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
+        )
+
+        self.assertAlmostEqual(fwd.penalty, 11, delta=3)
+        self.assertIsNone(rev)

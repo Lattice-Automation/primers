@@ -9,5 +9,5 @@ except DistributionNotFound:
 finally:
     del get_distribution, DistributionNotFound
 
-from .primers import primers, Primer, LEN_MAX, LEN_MIN
-
+from .primers import primers, score, Primer, Scoring, LEN_MAX, LEN_MIN
+from .primers import primers as create

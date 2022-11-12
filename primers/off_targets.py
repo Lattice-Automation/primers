@@ -6,7 +6,7 @@ from typing import List, Dict
 
 
 def off_targets(seq: str, check_seq: str) -> List[int]:
-    """Return a list of off-target counts for primers whose end is that index.
+    """Return a list of off-target counts for primers that end is that index.
 
     For example, offtarget_cache[20] -> returns the number of offtarget binding
     sites whose last bp ends in the 20th index of `seq`
