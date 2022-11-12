@@ -1,10 +1,10 @@
 # primers
 
-This is a tool for creating PCR primers. It has an emphasis on DNA assembly and makes it easy to add sequences to the end of PCR fragments. This is part of [overlap extension polymerase chain reaction](https://en.wikipedia.org/wiki/Overlap_extension_polymerase_chain_reaction) and preparing unstandardized DNA sequences for Gibson assembly and Golden gate cloning.
+This is a tool for creating PCR primers. Its target use-case is DNA assembly. It makes it easy to add sequences to the end of PCR fragments. This is part of [overlap extension polymerase chain reaction](https://en.wikipedia.org/wiki/Overlap_extension_polymerase_chain_reaction) and preparing unstandardized DNA sequences for Gibson assembly and Golden gate cloning.
 
-`primers` quickly creates pairs with optimized lengths, Tms, GC ratios, secondary structures (minimum free energies) and without off-target binding sites. Each returned primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence, and "tm_total", the melting temperature for the entire primer with additional sequence added to its 5' end.
+`primers` quickly creates pairs with optimized lengths, Tms, GC ratios, secondary structures (minimum free energies) and without off-target binding sites. Each returned primer has two tms: "tm", the melting temperature for the portion of the primer that binds to the template sequence and "tm_total", the melting temperature for the entire primer with additional sequence added to its 5' end.
 
-Unlike the most used alternative, Primer3, `primers` has a permissive MIT license and support for adding sequence to the 5' ends of primers.
+Compared to the most used alternative, [Primer3](https://github.com/primer3-org/primer3) (GPL v2), `primers` has a permissive MIT license and support for adding sequence to the 5' ends of primers.
 
 ## Installation
 
@@ -21,27 +21,26 @@ from primers import primers
 
 # add enzyme recognition sequences to FWD and REV primers: BsaI, BpiI
 fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd="GGTCTC", add_rev="GAAGAC")
-print(fwd.fwd)  # True
-print(fwd.seq)  # GGTCTCAATGAGACAATAGCACACACA; 5' to 3'
-print(fwd.tm)   # 62.4; melting temp
-print(fwd.tm_total)  # 68.6; melting temp with added seq (GGTCTC)
-print(fwd.dg)   # -1.86; minimum free energy of the secondary structure
+print(fwd.fwd)      # True
+print(fwd.seq)      # GGTCTCAATGAGACAATAGCACACACA; 5' to 3'
+print(fwd.tm)       # 62.4; melting temp
+print(fwd.tm_total) # 68.6; melting temp with added seq (GGTCTC)
+print(fwd.dg)       # -1.86; minimum free energy of the secondary structure
 
 # add from a range of sequence to the FWD primer: [5, 12] bp
 add_fwd = "GGATCGAGCTTGA"
 fwd, rev = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", add_fwd=add_fwd, add_fwd_len=(5, 12))
-print(fwd.seq)  # AGCTTGAAATGAGACAATAGCACACACAGC
-print(fwd.tm)   # 62.2
-print(fwd.tm_total)  # 70.0
+print(fwd.seq)      # AGCTTGAAATGAGACAATAGCACACACAGC
+print(fwd.tm)       # 62.2
+print(fwd.tm_total) # 70.0
 ```
 
 ### CLI
 
 ```txt
-$ primers AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA -f GGTCTC -r GAAGAC
-  dir    tm   ttm     dg   pen  seq
-  FWD  62.4  68.6  -1.86  5.43  GGTCTCAATGAGACAATAGCACACACA
-  REV  62.8  67.4      0   4.8  GAAGACTTTCGTATGCTGACCTAG
+$ dir    tm   ttm     dg   pen  seq
+  FWD  60.8  67.0  -1.86  5.93  GGTCTCAATGAGACAATAGCACACAC
+  REV  60.8  65.8      0   3.2  GAAGACTTTCGTATGCTGACCTAG
 ```
 
 ```txt
@@ -85,7 +84,7 @@ The penalty for each possible primer, `p`, is calculated as:
 ```txtf
 PENALTY(p) =
     abs(p.tm - optimal_tm) * penalty_tm +     // penalize each deg of suboptimal melting temperature
-    abs(p.gc - optimal_gc) * penalty_gc +     // penalize suboptimal GC ratios
+    abs(p.gc - optimal_gc) * penalty_gc +     // penalize each percentage point of suboptimal GC ratio
     abs(len(p) - optimal_len) * penalty_len + // penalize each bp of suboptimal length
     abs(p.tm - p.pair.tm) * penalty_tm_diff + // penalize each deg of melting temperature diff between primers
     abs(p.dg) * penalty_dg +                  // penalize each kcal/mol of free energy in secondary structure
@@ -99,8 +98,8 @@ optimal_tm: float = 62.0
 optimal_gc: float = 0.5
 optimal_len: int = 22
 penalty_tm: float = 1.0
-penalty_gc: float = 3.0
-penalty_len: float = 1.0
+penalty_gc: float = 0.2
+penalty_len: float = 0.5
 penalty_tm_diff: float = 1.0
 penalty_dg: float = 2.0
 penalty_offtarget: float = 20.0

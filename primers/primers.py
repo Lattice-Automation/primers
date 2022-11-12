@@ -86,9 +86,9 @@ class PrimerFactory(NamedTuple):
     between primers' properties and those optimal values.
 
     Attributes:
-        opt_tm: Optimal tm of a primer
-        opt_gc: Optimal GC ratio of a primer
-        opt_len: Optimal length of a primer
+        optimal_tm: Optimal tm of a primer
+        optimal_gc: Optimal GC ratio of a primer
+        optimal_len: Optimal length of a primer
         penalty_tm: Penalty for a large tm difference
         penalty_tm_diff: Penalty for differences between primers in a pair
         penalty_dg: Penalty for very negative free energies
@@ -132,7 +132,7 @@ class PrimerFactory(NamedTuple):
 
         dg = min(dg, 0)
         penalty_tm = abs(tm - self.optimal_tm) * self.penalty_tm
-        penalty_gc = abs(gc - self.optimal_gc) * self.penalty_gc
+        penalty_gc = abs(gc - self.optimal_gc) * self.penalty_gc * 100
         penalty_len = abs(len(seq) - self.optimal_len) * self.penalty_len
         penalty_dg = abs(dg) * self.penalty_dg
         penalty_offtarget = offtargets * self.penalty_offtarget
@@ -179,8 +179,8 @@ def primers(
     optimal_gc: float = 0.5,
     optimal_len: int = 22,
     penalty_tm: float = 1.0,
-    penalty_gc: float = 3.0,
-    penalty_len: float = 1.0,
+    penalty_gc: float = 0.2,
+    penalty_len: float = 0.5,
     penalty_tm_diff: float = 1.0,
     penalty_dg: float = 2.0,
     penalty_offtarget: float = 20.0,
@@ -204,7 +204,8 @@ def primers(
         optimal_len: The optimal length of a primer, excluding additional
             sequence added via `add_fwd` and `add_rev`
         penalty_tm: Penalty for tm differences from optimal
-        penalty_gc: Penalty for differences between primers and optimal GC ratio
+        penalty_gc: Penalty for each percentage point diff between primers
+            and the optimal GC ratio
         penalty_len: Penalty for differences in primer length
         penalty_diff_tm: Penalty for tm differences between primers
         penalty_dg: Penalty for minimum free energy of a primer
@@ -244,10 +245,10 @@ def primers(
         raise ValueError(err)
 
     # create two 2D arrays of primers in the FWD and REV directions
-    opt_fwd_len = round(optimal_len + (add_fwd_min + add_fwd_max) / 2)
+    optimal_fwd_len = round(optimal_len + (add_fwd_min + add_fwd_max) / 2)
     fwd_seq = seq_full[: add_fwd_max + LEN_MAX]
     fwd_primers = _primers(
-        factory._replace(optimal_len=opt_fwd_len),
+        factory._replace(optimal_len=optimal_fwd_len),
         fwd_seq,
         offtarget_check,
         range(0, add_fwd_max - add_fwd_min + 1),
@@ -256,11 +257,11 @@ def primers(
         add_fwd_max,
     )
 
-    opt_rev_len = round(optimal_len + (add_rev_min + add_rev_max) / 2)
+    optimal_rev_len = round(optimal_len + (add_rev_min + add_rev_max) / 2)
     rev_seq = _rc(seq_full)
     rev_seq = rev_seq[: add_rev_max + LEN_MAX]
     rev_primers = _primers(
-        factory._replace(optimal_len=opt_rev_len),
+        factory._replace(optimal_len=optimal_rev_len),
         rev_seq,
         offtarget_check,
         range(0, add_rev_max - add_rev_min + 1),
