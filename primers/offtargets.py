@@ -10,11 +10,11 @@ def offtargets(seq: str, check_seq: str) -> List[int]:
 
     For example, offtarget_cache[20] -> returns the number of offtarget binding
     sites whose last bp ends in the 20th index of `seq`
-    
+
     Args:
         seq: The template sequence being checked
         check_seq: The sequence being checked for offtarget binding sites
-    
+
     Returns:
         List[int]: A list of binding site counts for primers whose last
             bp is within that index of the list
@@ -48,7 +48,7 @@ def _rc(seq: str) -> str:
 
     Args:
         seq: The template sequence
-    
+
     Returns:
         str: The reverse complement of the template sequence
     """

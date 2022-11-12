@@ -4,13 +4,13 @@ import argparse
 import sys
 from typing import List
 
-from . import __version__, primers, Primer
+from . import __version__, primers
 from .primers import PRIMER_FMT
 
 
 def run():
     """Entry point for console_scripts.
-    
+
     Create primers and log the results.
     """
 
@@ -51,7 +51,7 @@ Logs the FWD and REV primer with columns:
 
 Where:
     dir = FWD or REV.
-    tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
+    tm  = The melting temperature of the annealing portion of the primer (Celsius).
     ttm = The total melting temperature of the primer with added seq (Celsius).
     dg  = The minimum free energy of the primer (kcal/mol).
     pen = The primer's penalty score. Lower is better.

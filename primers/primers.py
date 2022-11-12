@@ -39,7 +39,7 @@ import heapq
 from logging import warning
 from typing import Tuple, NamedTuple, List, Optional
 
-from seqfold import gc_cache, dg_cache, tm_cache, Cache
+from seqfold import gc_cache, dg_cache, tm_cache
 from .offtargets import offtargets
 
 
@@ -93,7 +93,7 @@ class PrimerFactory(NamedTuple):
 
     Holds the optimal values for a primer and the penalty for differences
     between primers' properties and those optimal values.
-    
+
     Attributes:
         opt_tm: Optimal tm of a primer
         opt_gc: Optimal GC ratio of a primer
@@ -104,9 +104,9 @@ class PrimerFactory(NamedTuple):
         penalty_offtarget: Penalty for offtargets
     """
 
-    opt_tm: float
-    opt_gc: float
-    opt_len: int
+    optimal_tm: float
+    optimal_gc: float
+    optimal_len: int
     penalty_tm: float
     penalty_gc: float
     penalty_len: float
@@ -125,7 +125,7 @@ class PrimerFactory(NamedTuple):
         offtargets: int,
     ) -> Primer:
         """Create a Primer with a scored penalty.
-        
+
         Args:
             seq: Sequence of the primer, 5' to 3'
             tm: Tm of the created primer, Celsius
@@ -134,15 +134,15 @@ class PrimerFactory(NamedTuple):
             dg: Minimum free energy (kcal/mol) of the folded DNA sequence
             fwd: Whether this is a FWD primer
             offtargets: The number of offtarget binding sites in the template sequence
-        
+
         Returns:
             Primer: A Primer with a penalty score
         """
 
         dg = min(dg, 0)
-        penalty_tm = abs(tm - self.opt_tm) * self.penalty_tm
-        penalty_gc = abs(gc - self.opt_gc) * self.penalty_gc
-        penalty_len = abs(len(seq) - self.opt_len) * self.penalty_len
+        penalty_tm = abs(tm - self.optimal_tm) * self.penalty_tm
+        penalty_gc = abs(gc - self.optimal_gc) * self.penalty_gc
+        penalty_len = abs(len(seq) - self.optimal_len) * self.penalty_len
         penalty_dg = abs(dg) * self.penalty_dg
         penalty_offtarget = offtargets * self.penalty_offtarget
         penalty = penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_offtarget
@@ -160,11 +160,11 @@ class PrimerFactory(NamedTuple):
 
     def build_pair(self, fwd: Primer, rev: Primer) -> Tuple[Primer, Primer]:
         """Create a pair of Primers with a tm_diff penalty added.
-        
+
         Args:
             fwd: The FWD primer
             rev: The REV primer
-        
+
         Returns:
             (Primer, Primer): A Primer pair with a tm_diff penalty applied
         """
@@ -184,9 +184,9 @@ def primers(
     add_fwd_len: Tuple[int, int] = (-1, -1),
     add_rev_len: Tuple[int, int] = (-1, -1),
     offtarget_check: str = "",
-    opt_tm: float = 62.0,
-    opt_gc: float = 0.5,
-    opt_len: int = 22,
+    optimal_tm: float = 62.0,
+    optimal_gc: float = 0.5,
+    optimal_len: int = 22,
     penalty_tm: float = 1.0,
     penalty_gc: float = 3.0,
     penalty_len: float = 1.0,
@@ -195,10 +195,10 @@ def primers(
     penalty_offtarget: float = 20.0,
 ) -> Tuple[Primer, Primer]:
     """Create primers for PCR amplification of the sequence.
-    
+
     Args:
         seq: The DNA sequence to amplify
-    
+
     Keyword Args:
         add_fwd: Additional sequence to add to FWD primer (5' to 3')
         add_rev: Additional sequence to add to REV primer (5' to 3')
@@ -207,10 +207,10 @@ def primers(
         add_rev_len: Range (min, max) of number of bp to add from
             `add_rev` (from 3' end)
         offtarget_check: The sequence to check for offtarget binding sites
-        opt_tm: The optimal tm of a primer based on IDT guidelines.
+        optimal_tm: The optimal tm of a primer based on IDT guidelines.
             Excluding added sequence
-        opt_gc: The optimal GC ratio of a primer, based on IDT guidelines
-        opt_len: The optimal length of a primer, excluding additional
+        optimal_gc: The optimal GC ratio of a primer, based on IDT guidelines
+        optimal_len: The optimal length of a primer, excluding additional
             sequence added via `add_fwd` and `add_rev`
         penalty_tm: Penalty for tm differences from optimal
         penalty_gc: Penalty for differences between primers and optimal GC ratio
@@ -218,7 +218,7 @@ def primers(
         penalty_diff_tm: Penalty for tm differences between primers
         penalty_dg: Penalty for minimum free energy of a primer
         penalty_offtarget: Penalty for offtarget binding sites in the `seq`
-    
+
     Returns:
         (Primer, Primer): Primers for PCR amplification
     """
@@ -228,9 +228,9 @@ def primers(
     add_fwd, _ = _parse(add_fwd, "")
     add_rev, _ = _parse(add_rev, "")
     factory = PrimerFactory(
-        opt_tm=opt_tm,
-        opt_gc=opt_gc,
-        opt_len=opt_len,
+        optimal_tm=optimal_tm,
+        optimal_gc=optimal_gc,
+        optimal_len=optimal_len,
         penalty_tm=penalty_tm,
         penalty_gc=penalty_gc,
         penalty_len=penalty_len,
@@ -253,10 +253,10 @@ def primers(
         raise ValueError(err)
 
     # create two 2D arrays of primers in the FWD and REV directions
-    opt_fwd_len = round(opt_len + (add_fwd_min + add_fwd_max) / 2)
+    opt_fwd_len = round(optimal_len + (add_fwd_min + add_fwd_max) / 2)
     fwd_seq = seq_full[: add_fwd_max + LEN_MAX]
     fwd_primers = _primers(
-        factory._replace(opt_len=opt_fwd_len),
+        factory._replace(optimal_len=opt_fwd_len),
         fwd_seq,
         offtarget_check,
         range(0, add_fwd_max - add_fwd_min + 1),
@@ -265,11 +265,11 @@ def primers(
         add_fwd_max,
     )
 
-    opt_rev_len = round(opt_len + (add_rev_min + add_rev_max) / 2)
+    opt_rev_len = round(optimal_len + (add_rev_min + add_rev_max) / 2)
     rev_seq = _rc(seq_full)
     rev_seq = rev_seq[: add_rev_max + LEN_MAX]
     rev_primers = _primers(
-        factory._replace(opt_len=opt_rev_len),
+        factory._replace(optimal_len=opt_rev_len),
         rev_seq,
         offtarget_check,
         range(0, add_rev_max - add_rev_min + 1),
@@ -292,7 +292,7 @@ def _primers(
     add_len: int,
 ) -> List[List[Optional[Primer]]]:
     """Return a matrix of primers for (i, j) where (i, j) are the start/end indexes
-    
+
     Args:
         factory: Primer factory for creating the primers, assigning score
         seq: The sequence who primers are being created for
@@ -301,7 +301,7 @@ def _primers(
         end_range: A range of possible ending indicies
         fwd: Whether these primers are in the FWD direction
         add_len: The number of additional bp added to the sequence's end
-    
+
     Returns:
         List[List[Primer]]: A 2D matrix of Primers with penalties. None if no
             primer created within a range. None if it's an invalid range (eg j < i) or
@@ -339,7 +339,7 @@ def _choose(
     rev_primers: List[List[Optional[Primer]]],
 ) -> Tuple[Primer, Primer]:
     """Choose the best combo of primers. One in FWD direction and one in the REV direction.
-    
+
     The 10 best primers are chosen in the FWD and REV direction and their
     tm is compared to create NEW primers with the tm_diff penalty applied
 
@@ -347,7 +347,7 @@ def _choose(
         factory: PrimerFactory for creating new primers with tm_diff penalties
         fwd_primers: FWD primer 2D array from `_primers`
         rev_primers: REV primer 2D array from `_primers`
-    
+
     Returns:
         (Primer, Primer): The 'best' combo of primers for PCR
     """
@@ -397,10 +397,10 @@ def _parse(seq: str, offtarget_check: str) -> Tuple[str, str]:
     Args:
         seq: Template DNA sequence
         offtarget_check: The sequence that's checked for offtargets
-    
+
     Raises:
         ValueError: If invalid bases are in the DNA, anything other than {ATGC}
-    
+
     Returns:
         str: The parsed DNA sequence to be amplified
     """
@@ -429,7 +429,7 @@ def _parse_add_len(add: str, add_len: Tuple[int, int]) -> Tuple[int, int]:
     Args:
         add: The additional sequence being added
         add_len: A tuple with a min and max number of bp to add, inclusive
-    
+
     Returns:
         (int, int): A tuple with a min and max number of bp to add
     """
@@ -472,7 +472,7 @@ def _rc(seq: str) -> str:
 
     Args:
         seq: The template sequence
-    
+
     Returns:
         str: The reverse complement of the template sequence
     """
