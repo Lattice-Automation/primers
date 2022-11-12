@@ -28,82 +28,117 @@ supported by:
 
 import heapq
 from logging import warning
-from typing import Tuple, NamedTuple, List, Optional
+from typing import Any, Dict, Tuple, NamedTuple, List, Optional
 
 from seqfold import gc_cache, dg_cache, tm_cache
-from .offtargets import offtargets
+from .off_targets import off_targets
 
 
 LEN_MIN = 15  # min length of the annealing portion of primers
 LEN_MAX = 32  # max length of the annealing portion of primers, based on IDT guidelines
 
-PRIMER_FMT: str = "{:>5} {:>5} {:>5} {:>6} {:>5}  {}"
-"""{fwd} {tm} {tm_total} {dg} {penalty} {seq}"""
+
+class Scoring(NamedTuple):
+    """A scoring for a single Primer."""
+
+    penalty: float
+    """The high-level penalty for this primer"""
+
+    penalty_tm: float
+    """Penalty for each degree of tm suboptimality (diff from optimal)"""
+
+    penalty_tm_diff: float
+    """Penalty for each degree of tm difference between primers in a pair"""
+
+    penalty_gc: float
+    """Penalty for each percentage point of GC suboptimality (diff from optional)"""
+
+    penalty_len: float
+    """Penalty for each base pair length of suboptimality (diff from optimal)"""
+
+    penalty_dg: float
+    """Penalty for every kcal/mol of free energy"""
+
+    penalty_off_target: float
+    """Penalty for each off-target binding site"""
 
 
 class Primer(NamedTuple):
-    """A single Primer for PCR amplification of a DNA sequence.
-
-    Attributes:
-        seq: The DNA sequence of the primer; 5' to 3'
-        tm: The melting temperature of the primer (Celsius):
-            for the binding region pre-addition of added sequence
-        tm_total: The melting temperature of the total primer (Celsius):
-            the tm of the primer with the binding and added sequence
-        gc: The GC percentage of the primer
-        dg: The minimum free energy of the primer
-        fwd: Whether the primer anneals in the FWD
-            direction of the template sequence
-        penalty: The penalty score for this primer
-    """
+    """A single Primer for PCR amplification of a DNA sequence."""
 
     seq: str
+    """The DNA sequence of the primer; 5' to 3'"""
+
+    len: int
+    """The length of the seq"""
+
     tm: float
+    """The melting temperature of the primer (Celsius) for the
+    binding region pre-addition of added sequence"""
+
     tm_total: float
+    """The melting temperature of the total primer (Celsius):
+    the tm of the primer with the binding and added sequence"""
+
     gc: float
+    """The GC ratio of the primer"""
+
     dg: float
+    """The minimum free energy of the primer (kcal/mol)"""
+
     fwd: bool
-    offtargets: int
-    penalty: float
+    """Whether the primer anneals in the FWD direction of the template sequence"""
 
-    def __str__(self) -> str:
-        """Create a string representation of the primer."""
+    off_target_count: int
+    """The count of off-targets in the primer"""
 
-        return PRIMER_FMT.format(
-            "FWD" if self.fwd else "REV",
-            self.tm,
-            self.tm_total,
-            round(self.dg, 2),
-            round(self.penalty, 2),
-            self.seq,
-        )
+    scoring: Scoring
+    """Scoring of this primer (contains penalty)"""
+
+    @property
+    def penalty(self) -> float:
+        """Penalty of the primer."""
+        return self.scoring.penalty
+
+    def dict(self) -> Dict[str, Any]:
+        j = self._asdict()
+        j["scoring"] = self.scoring._asdict()
+        return j
 
 
 class PrimerFactory(NamedTuple):
     """A factory for creating Primers with penalties.
 
     Holds the optimal values for a primer and the penalty for differences
-    between primers' properties and those optimal values.
-
-    Attributes:
-        optimal_tm: Optimal tm of a primer
-        optimal_gc: Optimal GC ratio of a primer
-        optimal_len: Optimal length of a primer
-        penalty_tm: Penalty for a large tm difference
-        penalty_tm_diff: Penalty for differences between primers in a pair
-        penalty_dg: Penalty for very negative free energies
-        penalty_offtarget: Penalty for offtargets
+    between primers' properties and optimal values.
     """
 
     optimal_tm: float
+    """Optimal tm of a primer"""
+
     optimal_gc: float
+    """Optimal GC ratio of a primer"""
+
     optimal_len: int
+    """Optimal length of a primer"""
+
     penalty_tm: float
-    penalty_gc: float
-    penalty_len: float
+    """Penalty for each degree of tm suboptimality (diff from optimal)"""
+
     penalty_tm_diff: float
+    """Penalty for each degree of tm difference between primers in a pair"""
+
+    penalty_gc: float
+    """Penalty for each percentage point of GC suboptimality (diff from optional)"""
+
+    penalty_len: float
+    """Penalty for each base pair length of suboptimality (diff from optimal)"""
+
     penalty_dg: float
-    penalty_offtarget: float
+    """Penalty for every kcal/mol of free energy"""
+
+    penalty_off_target: float
+    """Penalty for each off-target binding site"""
 
     def build(
         self,
@@ -113,7 +148,7 @@ class PrimerFactory(NamedTuple):
         gc: float,
         dg: float,
         fwd: bool,
-        offtargets: int,
+        off_target_count: int,
     ) -> Primer:
         """Create a Primer with a scored penalty.
 
@@ -124,7 +159,7 @@ class PrimerFactory(NamedTuple):
             gc: GC ratio of the created primer
             dg: Minimum free energy (kcal/mol) of the folded DNA sequence
             fwd: Whether this is a FWD primer
-            offtargets: The number of offtarget binding sites in the template sequence
+            off_target_count: The number of offtarget binding sites in the template sequence
 
         Returns:
             Primer: A Primer with a penalty score
@@ -135,18 +170,29 @@ class PrimerFactory(NamedTuple):
         penalty_gc = abs(gc - self.optimal_gc) * self.penalty_gc * 100
         penalty_len = abs(len(seq) - self.optimal_len) * self.penalty_len
         penalty_dg = abs(dg) * self.penalty_dg
-        penalty_offtarget = offtargets * self.penalty_offtarget
-        penalty = penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_offtarget
+        penalty_off_target = off_target_count * self.penalty_off_target
+        penalty = (
+            penalty_tm + penalty_gc + penalty_len + penalty_dg + penalty_off_target
+        )
 
         return Primer(
             seq=seq,
+            len=len(seq),
             tm=tm,
             tm_total=tm_total,
-            gc=gc,
-            dg=dg,
+            gc=round(gc, 2),
+            dg=round(dg, 2),
             fwd=fwd,
-            offtargets=offtargets,
-            penalty=penalty,
+            off_target_count=off_target_count,
+            scoring=Scoring(
+                penalty_tm=round(penalty_tm, 2),
+                penalty_tm_diff=0,  # unknown at this point
+                penalty_len=penalty_len,
+                penalty_gc=penalty_gc,
+                penalty_dg=round(penalty_dg, 2),
+                penalty_off_target=penalty_off_target,
+                penalty=round(penalty, 2),
+            ),
         )
 
     def build_pair(self, fwd: Primer, rev: Primer) -> Tuple[Primer, Primer]:
@@ -162,8 +208,18 @@ class PrimerFactory(NamedTuple):
 
         penalty_tm_diff = abs(fwd.tm - rev.tm) * self.penalty_tm_diff
 
-        new_fwd = fwd._replace(penalty=fwd.penalty + penalty_tm_diff)
-        new_rev = rev._replace(penalty=rev.penalty + penalty_tm_diff)
+        new_fwd = fwd._replace(
+            scoring=fwd.scoring._replace(
+                penalty=fwd.scoring.penalty + penalty_tm_diff,
+                penalty_tm_diff=penalty_tm_diff,
+            )
+        )
+        new_rev = rev._replace(
+            scoring=rev.scoring._replace(
+                penalty=rev.scoring.penalty + penalty_tm_diff,
+                penalty_tm_diff=penalty_tm_diff,
+            )
+        )
 
         return new_fwd, new_rev
 
@@ -183,7 +239,7 @@ def primers(
     penalty_len: float = 0.5,
     penalty_tm_diff: float = 1.0,
     penalty_dg: float = 2.0,
-    penalty_offtarget: float = 20.0,
+    penalty_off_target: float = 20.0,
 ) -> Tuple[Primer, Primer]:
     """Create primers for PCR amplification of the sequence.
 
@@ -209,7 +265,7 @@ def primers(
         penalty_len: Penalty for differences in primer length
         penalty_diff_tm: Penalty for tm differences between primers
         penalty_dg: Penalty for minimum free energy of a primer
-        penalty_offtarget: Penalty for offtarget binding sites in the `seq`
+        penalty_off_target: Penalty for offtarget binding sites in the `seq`
 
     Returns:
         (Primer, Primer): Primers for PCR amplification
@@ -228,7 +284,7 @@ def primers(
         penalty_len=penalty_len,
         penalty_tm_diff=penalty_tm_diff,
         penalty_dg=penalty_dg,
-        penalty_offtarget=penalty_offtarget,
+        penalty_off_target=penalty_off_target,
     )
 
     # set min/max if additional sequence was provided at FWD/REV
@@ -303,7 +359,7 @@ def _primers(
     gc = gc_cache(seq)
     tm = tm_cache(seq)
     dg = dg_cache(seq)
-    ot = offtargets(seq, offtarget_check)
+    ot = off_targets(seq, offtarget_check)
 
     assert len(gc) == len(tm) == len(dg)
 
@@ -351,13 +407,13 @@ def _choose(
         for p in row:
             if not p:
                 continue
-            heapq.heappush(ranked_fwd, (p.penalty, p))
+            heapq.heappush(ranked_fwd, (p.scoring.penalty, p))
 
     for row in rev_primers:
         for p in row:
             if not p:
                 continue
-            heapq.heappush(ranked_rev, (p.penalty, p))
+            heapq.heappush(ranked_rev, (p.scoring.penalty, p))
 
     if not ranked_fwd:
         raise RuntimeError("Failed to create any primers in the FWD direction")
@@ -370,7 +426,7 @@ def _choose(
     for _, fwd in heapq.nsmallest(10, ranked_fwd):
         for _, rev in heapq.nsmallest(10, ranked_rev):
             new_fwd, new_rev = factory.build_pair(fwd, rev)
-            new_penalty = new_fwd.penalty + new_rev.penalty
+            new_penalty = new_fwd.scoring.penalty + new_rev.scoring.penalty
             if new_penalty < min_penalty:
                 min_penalty = new_penalty
                 min_fwd, min_rev = fwd, rev

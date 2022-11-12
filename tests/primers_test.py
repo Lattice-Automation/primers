@@ -33,8 +33,8 @@ class TestPrimers(TestCase):
         self.assertTrue(p2.gc)
         self.assertTrue(p1.fwd)
         self.assertFalse(p2.fwd)
-        self.assertFalse(p1.offtargets)
-        self.assertFalse(p2.offtargets)
+        self.assertFalse(p1.off_target_count)
+        self.assertFalse(p2.off_target_count)
         self.assertTrue(p1.penalty)
         self.assertTrue(p2.penalty)
 
@@ -91,6 +91,9 @@ class TestPrimers(TestCase):
     def test_primers_parent(self):
         """Create primers given a parent with diff-case sequence."""
 
-        ps = primers("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", offtarget_check="ggaattacgtAATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAAggaccagttacagga")
+        ps = primers(
+            "AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
+            offtarget_check="ggaattacgtAATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAAggaccagttacagga",
+        )
 
         self.assertTrue(ps)

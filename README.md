@@ -38,9 +38,10 @@ print(fwd.tm_total) # 70.0
 ### CLI
 
 ```txt
-$ dir    tm   ttm     dg   pen  seq
-  FWD  60.8  67.0  -1.86  5.93  GGTCTCAATGAGACAATAGCACACAC
-  REV  60.8  65.8      0   3.2  GAAGACTTTCGTATGCTGACCTAG
+$ primers AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA -f GGTCTC -r GAAGAC
+  dir    tm   ttm     dg   pen  seq
+  FWD  61.8  67.6  -1.86  5.23  GGTCTCAATGAGACAATAGCACACACA
+  REV  61.9  66.5  -0.88  4.85  GAAGACTTTCGTATGCTGACCTAGC
 ```
 
 ```txt
@@ -50,14 +51,14 @@ usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [--ve
 Create PCR primers for a DNA sequence.
 
 Logs the FWD and REV primer with columns:
-    dir, tm, ttm, dg, pen, seq
+    dir, tm, ttm, dg, p, seq
 
 Where:
     dir = FWD or REV.
     tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
     ttm = The total melting temperature of the primer with added seq (Celsius).
     dg  = The minimum free energy of the primer's secondary structure (kcal/mol).
-    pen = The primer's penalty score. Lower is better.
+    p   = The primer's penalty score. Lower is better.
     seq = The sequence of the primer in the 5' to the 3' direction.
 
 positional arguments:

@@ -1,19 +1,19 @@
 from unittest import TestCase
 
-from primers.offtargets import offtargets
+from primers.off_targets import off_targets
 
 
-class TestOfftargets(TestCase):
+class TestOffTargets(TestCase):
     """Test offtarget detection."""
 
-    def test_offtargets(self):
+    def test_off_targets(self):
         """Find and cache offtarget binding sites."""
 
         # GTGGCTAGCC is one by removed from GTGGCTAGGC in seq
         parent = "CTGACTCTACTTGGAAATGTGGCTAGGCCTTTGCCCACGCACCTGATCGGTCCTGTGGCTAGCCTCGTTTGCTTTTTAGGACCGGATGAACTACAGAGCATTGCAAGAATC"
         seq = "CTGACTCTACTTGGAAATGTGGCTAGGCCTT"
 
-        ot = offtargets(seq, parent)
+        ot = off_targets(seq, parent)
 
         self.assertEqual(0, ot[0])
         self.assertEqual(len(seq), len(ot))
