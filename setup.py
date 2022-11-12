@@ -36,6 +36,5 @@ setup(
     ],
     entry_points={"console_scripts": ["primers=primers.main:run"]},
     zip_safe=False,
-    extra_require={"dev": ["black", "pylint", "bumpversion"]},
     python_requires=">=3.0",
 )
