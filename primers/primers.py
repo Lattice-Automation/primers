@@ -12,15 +12,6 @@ a multi-objective optimization problem. Ideally, pairs of primers
 for PCR amplification would have similar, ideal tms, low gc%s, low
 free energies (dgs) and lack off-target binding sites.
 
-In this module, the penalty for each possible primer, p, is calculated as:
-    PENALTY(p) =
-        abs(p.tm - opt_tm) * penalty_tm +
-        abs(p.gc - opt_gc) * penalty_gc +
-        abs(len(p) - opt_len) * penalty_len +
-        abs(p.tm - p.pair.tm) * penalty_tm_diff +
-        abs(p.dg) * penalty_dg +
-        p.offtargets * penalty_offtarget
-
 The primer pair with the lowest combined penalty score is chosen.
 
 Given this module's emphasis on DNA assembly, additional sequences added to the FWD and/or REV primer

@@ -76,28 +76,28 @@ optional arguments:
 
 ## Algorithm
 
-Creating primers for a DNA sequence is non-trivial because it's multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, this is accomplished with a linear function that penalizes undesired characteristics. The primer pair with the lowest combined penalty is created.
+Creating and choosing primers for PCR is non-trivial because it requires multi-objective optimization. Ideally pairs of primers for PCR amplification would have similar tms, GC ratios close to 0.5, high minimum free energies (dg), and a lack off-target binding sites. In `primers`, like Primer3, choosing amongst those sometimes competing goals is accomplished with a linear function that penalizes undesirable characteristics. The primer pair with the lowest combined penalty is created.
 
 ### Scoring
 
-The penalty for each possible primer, p, is calculated as:
+The penalty for each possible primer, `p`, is calculated as:
 
-```txt
+```txtf
 PENALTY(p) =
-    abs(p.tm - opt_tm) * penalty_tm +   // tm diff
-    abs(p.gc - opt_gc) * penalty_gc +   // GC ratio diff
-    abs(len(p) - opt_len) * penalty_len +      // length diff
-    abs(p.tm - p.pair.tm) * penalty_tm_diff +  // tm diff between primers
-    abs(p.dg) * penalty_dg +            // free energy
-    p.offtargets * penalty_offtarget    // number of off-targets
+    abs(p.tm - optimal_tm) * penalty_tm +     // penalize each deg of suboptimal melting temperature
+    abs(p.gc - optimal_gc) * penalty_gc +     // penalize suboptimal GC ratios
+    abs(len(p) - optimal_len) * penalty_len + // penalize each bp of suboptimal length
+    abs(p.tm - p.pair.tm) * penalty_tm_diff + // penalize each deg of melting temperature diff between primers
+    abs(p.dg) * penalty_dg +                  // penalize each kcal/mol of free energy in secondary structure
+    p.offtarget_count * penalty_offtarget     // penalize each off-target binding site
 ```
 
-Each of the optimal (`opt_*`) and penalty (`penalty_*`) parameters is adjustable through the `primers.primers()` function. The defaults are below.
+Each of the optimal (`optimal_*`) and penalty (`penalty_*`) parameters is adjustable through the `primers.primers()` function. The defaults are below.
 
 ```python
-opt_tm: float = 62.0
-opt_gc: float = 0.5
-opt_len: int = 22
+optimal_tm: float = 62.0
+optimal_gc: float = 0.5
+optimal_len: int = 22
 penalty_tm: float = 1.0
 penalty_gc: float = 3.0
 penalty_len: float = 1.0
@@ -106,13 +106,13 @@ penalty_dg: float = 2.0
 penalty_offtarget: float = 20.0
 ```
 
-### Off-targets
+### Off-target Binding Sites
 
-Off-targets are defined as a subsequence within one mismatch of the last 10bp of a primer's 3' end. This is experimentally supported by:
+Usually, off-target binding sites should be avoided. In `primers`, off-target binding sites are those with `<= 1` mismatch in the last 10 bair pairs of the primer's 3' end. This definition experimentally supported by:
 
 > Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
 
-By default, primers are checked for off-targets within the `seq` parameter passed to `primers.primers(seq)`. But the primers can be checked against another sequence if it's passed through the `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence; for example: a plasmid.
+By default, primers are checked for off-targets within the `seq` parameter passed to `primers.primers(seq)`. But the primers can be checked against another sequence if it is passed to the optional `offtarget_check` argument. This is useful when PCR'ing a subsequence of a larger DNA sequence like a plasmid.
 
 ```python
 seq = "AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA"
