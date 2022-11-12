@@ -4,10 +4,10 @@ This is a small, straightforward tool for creating PCR primers. Its target use-c
 
 Reasons to choose `primers` instead of [Primer3](https://github.com/primer3-org/primer3) include its:
 
+- **features**: It is uniquely focused on DNA assembly flows like Gibson Assembly and Golden Gate cloning. You can design primers while adding sequence to the 5' ends of primers.
 - **simplicity**: It is a small and simple Python CLI/library with a single dependency ([seqfold](https://github.com/Lattice-Automation/seqfold)). It is easier to install and use.
-- **features**: You can design primers while adding base pairs to the 5' ends of primers (for Gibson or Golden Gate).
-- **license**: It has a permissive license (MIT) instead of a copyleft GPL v2 license.
-- **interface**: The Python library accepts and create primers for [Biopython `Seq`](https://biopython.org/wiki/Seq) classes. It supports JSON output for easy integration with other applications.
+- **interface**: The Python library accepts and create primers for [Biopython `Seq`](https://biopython.org/wiki/Seq) classes. It outputs JSON for easy integration with other applications.
+- **license**: It has a permissive, business-friendly license (MIT) instead of a copyleft GPL v2 license.
 
 ## Installation
 
