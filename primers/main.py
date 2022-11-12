@@ -65,7 +65,7 @@ def parse_args(args: List[str]) -> argparse.Namespace:
         description="""Create PCR primers for a DNA sequence.
 
 By default, the primers are logged in table format in rows:
-    dir, tm, ttm, gc, dg, pen, seq
+    dir, tm, ttm, gc, dg, p, seq
 
 Where:
     dir = FWD or REV.
@@ -73,7 +73,7 @@ Where:
     ttm = The total melting temperature of the primer with added seq (Celsius).
     gc  = The GC ratio of the primer.
     dg  = The minimum free energy of the primer (kcal/mol).
-    pen = The primer's penalty score. Lower is better.
+    p   = The primer's penalty score. Lower is better.
     seq = The sequence of the primer in the 5' to the 3' direction.
 """,
         formatter_class=argparse.RawTextHelpFormatter,

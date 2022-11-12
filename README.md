@@ -37,41 +37,77 @@ print(fwd.tm_total) # 70.0
 
 ### CLI
 
+#### Table Format
+
 ```txt
 $ primers AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA -f GGTCTC -r GAAGAC
-  dir    tm   ttm     dg   pen  seq
-  FWD  61.8  67.6  -1.86  5.23  GGTCTCAATGAGACAATAGCACACACA
-  REV  61.9  66.5  -0.88  4.85  GAAGACTTTCGTATGCTGACCTAGC
+  dir    tm   ttm  gc     dg     p  seq
+  FWD  60.8  67.0 0.5  -1.86  5.93  GGTCTCAATGAGACAATAGCACACAC
+  REV  60.8  65.8 0.5      0   3.2  GAAGACTTTCGTATGCTGACCTAG
 ```
+
+#### JSON Format
+
+The `--json` flag prints primers in JSON format with more details on scoring. The example below is truncated for clarity:
+
+```txt
+$ primers $SEQ -r GGTCTC -j | jq
+[
+  {
+    "seq": "CTACTAATAGCACACACGGG",
+    "len": 20,
+    "tm": 63.6,
+    "tm_total": 63.6,
+    "gc": 0.5,
+    "dg": 0,
+    "fwd": true,
+    "off_target_count": 0,
+    "scoring": {
+      "penalty": 2.6,
+      "penalty_tm": 1.6,
+      "penalty_tm_diff": 0,
+      "penalty_gc": 0,
+      "penalty_len": 1,
+      "penalty_dg": 0,
+      "penalty_off_target": 0
+    }
+  },
+...
+```
+
+#### Help
 
 ```txt
 $ primers --help
-usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [--version] SEQ
+usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [-j | --json | --no-json] [--version] SEQ
 
 Create PCR primers for a DNA sequence.
 
-Logs the FWD and REV primer with columns:
-    dir, tm, ttm, dg, p, seq
+By default, the primers are logged in table format in rows:
+    dir, tm, ttm, gc, dg, pen, seq
 
 Where:
     dir = FWD or REV.
-    tm  = Melting temperature of the annealing/binding part of the primer (Celsius).
+    tm  = The melting temperature of the annealing portion of the primer (Celsius).
     ttm = The total melting temperature of the primer with added seq (Celsius).
-    dg  = The minimum free energy of the primer's secondary structure (kcal/mol).
-    p   = The primer's penalty score. Lower is better.
+    gc  = The GC ratio of the primer.
+    dg  = The minimum free energy of the primer (kcal/mol).
+    pen = The primer's penalty score. Lower is better.
     seq = The sequence of the primer in the 5' to the 3' direction.
 
 positional arguments:
-  SEQ          DNA sequence
+  SEQ                   DNA sequence
 
-optional arguments:
-  -h, --help   show this help message and exit
-  -f SEQ       additional sequence to add to FWD primer (5' to 3')
-  -fl INT INT  space separated min-max range for the length to add from '-f' (5' to 3')
-  -r SEQ       additional sequence to add to REV primer (5' to 3')
-  -rl INT INT  space separated min-max range for the length to add from '-r' (5' to 3')
-  -t SEQ       sequence to check for offtargets binding sites
-  --version    show program's version number and exit
+options:
+  -h, --help            show this help message and exit
+  -f SEQ                additional sequence to add to FWD primer (5' to 3')
+  -fl INT INT           space separated min-max range for the length to add from '-f' (5' to 3')
+  -r SEQ                additional sequence to add to REV primer (5' to 3')
+  -rl INT INT           space separated min-max range for the length to add from '-r' (5' to 3')
+  -t SEQ                sequence to check for offtargets binding sites
+  -j, --json, --no-json
+                        whether to write the primers in a JSON array
+  --version             show program's version number and exit
 ```
 
 ## Algorithm
