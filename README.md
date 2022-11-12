@@ -89,7 +89,7 @@ $ primers create -f GGTCTC -r GAAGAC AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA
 The `--json` flag prints primers in JSON format with more details on scoring. The example below is truncated for clarity:
 
 ```txt
-$ primers create -r GGTCTC -j $SEQ | jq
+$ primers create -r GGTCTC --json $SEQ | jq
 [
   {
     "seq": "CTACTAATAGCACACACGGG",
@@ -171,7 +171,26 @@ $ primers score --json GGTCTCAATGAGACAATAGCACACAC GAAGACTTTCGTATGCTGACCTAG | jq
       "penalty_off_target": 0
     }
   },
-...
+  {
+    "seq": "GAAGACTTTCGTATGCTGACCTAG",
+    "len": 24,
+    "tm": 64.5,
+    "tm_total": 64.5,
+    "gc": 0.5,
+    "dg": 0,
+    "fwd": false,
+    "off_target_count": 0,
+    "scoring": {
+      "penalty": 6,
+      "penalty_tm": 2.5,
+      "penalty_tm_diff": 2.5,
+      "penalty_gc": 0,
+      "penalty_len": 1,
+      "penalty_dg": 0,
+      "penalty_off_target": 0
+    }
+  }
+]
 ```
 
 ### Off-target Binding Sites
