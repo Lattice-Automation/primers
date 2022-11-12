@@ -44,14 +44,10 @@ print(fwd.tm_total) # 70.0
 ### CLI
 
 ```
-$ primers --help
-usage: primers [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [-j | --json | --no-json] [--version] {score} ... SEQ
-
-Create or score PCR primers
+$ primers create --help
+usage: primers create [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [-j | --json | --no-json] SEQ
 
 positional arguments:
-  {score}
-    score               assign penalties to existing primers
   SEQ                   create primers to amplify this sequence
 
 options:
