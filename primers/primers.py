@@ -252,7 +252,7 @@ def score(
     fwd = fwd.upper()
     rev = rev.upper()
     seq, off_target_check = _parse(seq, offtarget_check)
-    add_fwd, seq, add_rev = _binding_seq(fwd, rev=rev, seq=seq)
+    add_fwd, _, add_rev = _binding_seq(fwd, rev=rev, seq=seq)
 
     factory = PrimerFactory(
         optimal_tm=optimal_tm,
@@ -266,31 +266,28 @@ def score(
         penalty_off_target=penalty_off_target,
     )
 
-    fwd_primers = _primers(
-        factory=factory,
-        seq=seq or fwd,
-        offtarget_check=off_target_check,
-        start_range=range(0, 1),
-        end_range=range(len(fwd) - 1, len(fwd)),
+    fwd_primer = factory.build(
+        fwd,
+        tm=tm_cache(fwd)[add_fwd][-1],
+        tm_total=tm_cache(fwd)[0][-1],
+        dg=dg_cache(fwd)[0][-1],
+        gc=gc_cache(fwd)[0][-1],
         fwd=True,
-        add_len=add_fwd,
+        off_target_count=off_targets(fwd, off_target_check)[len(fwd) - 1],
     )
-    fwd_primer = next(p for p in fwd_primers[0] if p)
 
     if not rev:
         return (fwd_primer, None)
 
-    rev_primers = _primers(
-        factory=factory,
-        seq=_rc(seq) or rev,
-        offtarget_check=off_target_check,
-        start_range=range(0, 1),
-        end_range=range(len(rev) - 1, len(rev)),
+    rev_primer = factory.build(
+        rev,
+        tm=tm_cache(rev)[add_rev][-1],
+        tm_total=tm_cache(rev)[0][-1],
+        dg=dg_cache(rev)[0][-1],
+        gc=gc_cache(rev)[0][-1],
         fwd=False,
-        add_len=add_rev,
+        off_target_count=off_targets(rev, off_target_check)[len(rev) - 1],
     )
-    rev_primer = next(p for p in rev_primers[0] if p)
-    assert rev_primer, "did not find a rev primer"
 
     return factory.build_pair(fwd_primer, rev_primer)
 

@@ -109,11 +109,15 @@ class TestPrimers(TestCase):
         self.assertAlmostEqual(fwd.penalty, 19, delta=3)
         self.assertAlmostEqual(rev.penalty, 6, delta=3)
 
+        fwd_seq = "GGTCTCAATGAGACAATA"
+        rev_seq = "AAAAAATTTCGTATGCTGACCTAG"
         fwd, rev = score(
-            "GGTCTCAATGAGACAATA",
-            "AAAAAATTTCGTATGCTGACCTAG",
+            fwd_seq,
+            rev_seq,
             seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
         )
+        self.assertEqual(fwd_seq, fwd.seq)
+        self.assertEqual(rev_seq, rev.seq)
         self.assertGreater(fwd.tm_total, fwd.tm)
         self.assertGreater(rev.tm_total, rev.tm)
 
