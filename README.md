@@ -92,7 +92,7 @@ $ primers create -f GGTCTC -r GAAGAC AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA
 The `--json` flag prints primers in JSON format with more details on scoring. The example below is truncated for clarity:
 
 ```txt
-$ primers create --json CTACTAATAGCACACACGGGGACTAGCATCTATCTCAGCTACGATCAGCATC | jq
+$ primers create CTACTAATAGCACACACGGGGACTAGCATCTATCTCAGCTACGATCAGCATC --json| jq
 [
   {
     "seq": "CTACTAATAGCACACACGGG",
@@ -150,45 +150,45 @@ penalty_offtarget: float = 20.0
 
 #### Scoring Existing Primers
 
-If you already have primers, and you want to see their features and penalty score, use the `primers score` command:
+If you already have primers, and you want to see their features and penalty score, use the `primers score` command. The command below scores a FWD and REV primer against the sequence `-s` that they were created to amplify:
 
 ```txt
-$ primers score --json GGTCTCAATGAGACAATAGCACACAC GAAGACTTTCGTATGCTGACCTAG | jq
+$ primers score GGTCTCAATGAGACAATA TTTCGTATGCTGACCTAG -s AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT --json | jq
 [
   {
-    "seq": "GGTCTCAATGAGACAATAGCACACAC",
-    "len": 26,
-    "tm": 67,
-    "tm_total": 67,
-    "gc": 0.5,
+    "seq": "GGTCTCAATGAGACAATA",
+    "len": 18,
+    "tm": 39.4,
+    "tm_total": 55,
+    "gc": 0.4,
     "dg": -1.86,
     "fwd": true,
     "off_target_count": 0,
     "scoring": {
-      "penalty": 13.23,
-      "penalty_tm": 5,
-      "penalty_tm_diff": 2.5,
-      "penalty_gc": 0,
+      "penalty": 49.9,
+      "penalty_tm": 22.6,
+      "penalty_tm_diff": 19.6,
+      "penalty_gc": 2,
       "penalty_len": 2,
-      "penalty_dg": 3.73,
+      "penalty_dg": 3.7,
       "penalty_off_target": 0
     }
   },
   {
-    "seq": "GAAGACTTTCGTATGCTGACCTAG",
-    "len": 24,
-    "tm": 64.5,
-    "tm_total": 64.5,
+    "seq": "TTTCGTATGCTGACCTAG",
+    "len": 18,
+    "tm": 59,
+    "tm_total": 59,
     "gc": 0.5,
     "dg": 0,
     "fwd": false,
     "off_target_count": 0,
     "scoring": {
-      "penalty": 6,
-      "penalty_tm": 2.5,
-      "penalty_tm_diff": 2.5,
+      "penalty": 24.6,
+      "penalty_tm": 3,
+      "penalty_tm_diff": 19.6,
       "penalty_gc": 0,
-      "penalty_len": 1,
+      "penalty_len": 2,
       "penalty_dg": 0,
       "penalty_off_target": 0
     }
