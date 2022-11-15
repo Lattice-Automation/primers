@@ -34,6 +34,13 @@ def parse_args(args: List[str]) -> argparse.Namespace:
     parser_score.set_defaults(run=run_score)
     parser_score.add_argument("primer", type=str, nargs="+", help="primer sequences")
     parser_score.add_argument(
+        "-s",
+        type=str,
+        help="the sequence that was amplified",
+        default="",
+        metavar="SEQ",
+    )
+    parser_score.add_argument(
         "-t",
         type=str,
         help="sequence to check for off-target binding sites",
@@ -126,7 +133,7 @@ def run_score(args: argparse.Namespace):
         )
         exit(1)
 
-    fwd, rev = score(seq_fwd, rev=seq_rev, offtarget_check=args.t)
+    fwd, rev = score(seq_fwd, rev=seq_rev, seq=args.s, offtarget_check=args.t)
 
     print_output(fwd, rev, args.json)
 
@@ -138,7 +145,7 @@ def print_output(fwd: Primer, rev: Optional[Primer], print_json=False):
         else:
             print(json.dumps([fwd.dict()]))
     else:
-        table_fmt = "{:>5} {:>5} {:>5} {:>3} {:>6} {:>5}  {}"
+        table_fmt = "{:>5} {:>5} {:>5} {:>5} {:>5} {:>5}  {}"
         print(table_fmt.format("dir", "tm", "ttm", "gc", "dg", "p", "seq"))
 
         for p in [fwd, rev]:

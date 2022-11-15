@@ -159,13 +159,13 @@ class PrimerFactory(NamedTuple):
             fwd=fwd,
             off_target_count=off_target_count,
             scoring=Scoring(
-                penalty_tm=round(penalty_tm, 2),
+                penalty_tm=round(penalty_tm, 1),
                 penalty_tm_diff=0,  # unknown at this point
                 penalty_len=penalty_len,
-                penalty_gc=penalty_gc,
-                penalty_dg=round(penalty_dg, 2),
+                penalty_gc=round(penalty_gc, 1),
+                penalty_dg=round(penalty_dg, 1),
                 penalty_off_target=penalty_off_target,
-                penalty=round(penalty, 2),
+                penalty=round(penalty, 1),
             ),
         )
 
@@ -184,14 +184,14 @@ class PrimerFactory(NamedTuple):
 
         new_fwd = fwd._replace(
             scoring=fwd.scoring._replace(
-                penalty=fwd.scoring.penalty + penalty_tm_diff,
-                penalty_tm_diff=penalty_tm_diff,
+                penalty=round(fwd.scoring.penalty + penalty_tm_diff, 1),
+                penalty_tm_diff=round(penalty_tm_diff, 1),
             )
         )
         new_rev = rev._replace(
             scoring=rev.scoring._replace(
-                penalty=rev.scoring.penalty + penalty_tm_diff,
-                penalty_tm_diff=penalty_tm_diff,
+                penalty=round(rev.scoring.penalty + penalty_tm_diff, 1),
+                penalty_tm_diff=round(penalty_tm_diff, 1),
             )
         )
 
@@ -201,6 +201,7 @@ class PrimerFactory(NamedTuple):
 def score(
     fwd: str,
     rev: str = "",
+    seq: str = "",
     offtarget_check: str = "",
     optimal_tm: float = 62.0,
     optimal_gc: float = 0.5,
@@ -221,6 +222,7 @@ def score(
 
     Keyword Args:
         rev: optional sequence of the second primer
+        seq: the sequence that the primers anneal to/amplify
         add_fwd: additional sequence to add to FWD primer (5' to 3')
         add_rev: additional sequence to add to REV primer (5' to 3')
         add_fwd_len: range (min, max) of number of bp to add from
@@ -242,7 +244,15 @@ def score(
         penalty_off_target: penalty for offtarget binding sites in the `seq`
     """
 
-    _, off_target_check = _parse("", offtarget_check)
+    if len(fwd) < LEN_MIN:
+        raise ValueError("`fwd` primer is too short: {} < {}", len(fwd), LEN_MIN)
+    if rev and len(rev) < LEN_MIN:
+        raise ValueError("`rev` primer is too short: {} < {}", len(rev), LEN_MIN)
+
+    fwd = fwd.upper()
+    rev = rev.upper()
+    seq, off_target_check = _parse(seq, offtarget_check)
+    add_fwd, seq, add_rev = _binding_seq(fwd, rev=rev, seq=seq)
 
     factory = PrimerFactory(
         optimal_tm=optimal_tm,
@@ -258,32 +268,81 @@ def score(
 
     fwd_primers = _primers(
         factory=factory,
-        seq=fwd,
+        seq=seq or fwd,
         offtarget_check=off_target_check,
         start_range=range(0, 1),
         end_range=range(len(fwd) - 1, len(fwd)),
         fwd=True,
-        add_len=0,
+        add_len=add_fwd,
     )
-    fwd_primer = fwd_primers[0][-1]
-    assert fwd_primer
+    fwd_primer = next(p for p in fwd_primers[0] if p)
 
     if not rev:
         return (fwd_primer, None)
 
     rev_primers = _primers(
         factory=factory,
-        seq=rev,
+        seq=_rc(seq) or rev,
         offtarget_check=off_target_check,
         start_range=range(0, 1),
         end_range=range(len(rev) - 1, len(rev)),
         fwd=False,
-        add_len=0,
+        add_len=add_rev,
     )
-    rev_primer = rev_primers[0][-1]
-    assert rev_primer
+    rev_primer = next(p for p in rev_primers[0] if p)
+    assert rev_primer, "did not find a rev primer"
 
     return factory.build_pair(fwd_primer, rev_primer)
+
+
+def _binding_seq(fwd: str, rev: str = "", seq: str = "") -> Tuple[int, str, int]:
+    """Attempt to find the binding region between the fwd and rev primers in seq"""
+
+    if not seq:
+        return (0, "", 0)
+
+    add_fwd = 0
+    add_rev = 0
+
+    # remove start of seq prior to binding site
+    try:
+        start_index_fwd = -10  # index on primer
+        start_index_seq = seq.index(fwd[start_index_fwd:])
+
+        while (
+            start_index_seq
+            and len(fwd) + start_index_fwd > 0
+            and seq[start_index_seq] == fwd[start_index_fwd]
+        ):
+            start_index_fwd -= 1
+            start_index_seq -= 1
+
+        add_fwd = len(fwd) + start_index_fwd
+        seq = seq[start_index_seq:]
+    except Exception as err:
+        raise ValueError("failed to find `fwd` binding site in `seq`: %s", err)
+
+    if not rev:
+        return (add_fwd, seq, add_rev)
+
+    # remove end of seq after the reverse primer binding site
+    try:
+        end_index_rev = 10
+        rev = _rc(rev)
+        end_index_seq = seq.index(rev[:end_index_rev])
+
+        while (
+            end_index_rev < len(rev) - 1
+            and rev[: end_index_rev + 2] in seq[end_index_seq:]
+        ):
+            end_index_rev += 1
+
+        add_rev = len(rev) - end_index_rev - 1
+        seq = seq[: end_index_seq + end_index_rev + 1]
+    except Exception as err:
+        raise ValueError("failed to find `rev` binding site in `seq`: %s", err)
+
+    return add_fwd, seq, add_rev
 
 
 def primers(
@@ -422,7 +481,6 @@ def _primers(
     tm = tm_cache(seq)
     dg = dg_cache(seq)
     ot = off_targets(seq, offtarget_check)
-
     assert len(gc) == len(tm) == len(dg)
 
     ps: List[List[Optional[Primer]]] = []

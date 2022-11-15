@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from primers import primers, score, Primer
-from primers.primers import _rc, _parse_add_len, LEN_MIN, LEN_MAX
+from primers.primers import _rc, _parse_add_len, LEN_MIN, LEN_MAX, _binding_seq
 
 
 class TestPrimers(TestCase):
@@ -102,13 +102,20 @@ class TestPrimers(TestCase):
         """Score an existing pair of primers."""
 
         fwd, rev = score(
-            "GGTCTCAATGAGACAATAGCACACAC",
-            "GAAGACTTTCGTATGCTGACCTAG",
+            "GGTCTCAATGAGACAATA",
+            "TTTCGTATGCTGACCTAG",
             offtarget_check="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
         )
-
-        self.assertAlmostEqual(fwd.penalty, 11, delta=3)
+        self.assertAlmostEqual(fwd.penalty, 19, delta=3)
         self.assertAlmostEqual(rev.penalty, 6, delta=3)
+
+        fwd, rev = score(
+            "GGTCTCAATGAGACAATA",
+            "AAAAAATTTCGTATGCTGACCTAG",
+            seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA",
+        )
+        self.assertGreater(fwd.tm_total, fwd.tm)
+        self.assertGreater(rev.tm_total, rev.tm)
 
     def test_primers_score_only_fwd(self):
         """Score an existing pair of primers."""
@@ -120,3 +127,50 @@ class TestPrimers(TestCase):
 
         self.assertAlmostEqual(fwd.penalty, 11, delta=3)
         self.assertIsNone(rev)
+
+    def test_primers_score_exceptions(self):
+        """Score an existing pair of primers."""
+
+        with self.assertRaises(ValueError):
+            score("ACGACTAC")  # too short fwd
+
+        with self.assertRaises(ValueError):
+            score("ACGACTACGACTACGATC", "GACTACG")  # too short rev
+
+    def test_primers_binding_sites(self):
+        """Subsequence the seq parameter via binding sites"""
+
+        add_fwd, seq, add_rev = _binding_seq(
+            "GGTCTCAATGAGACAATA",
+            rev="AAAAAATTTCGTATGC",
+            seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT",
+        )
+        self.assertEqual(6, add_fwd)
+        self.assertEqual(3, add_rev)
+        self.assertEqual("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT", seq)
+
+        # GGTCTCAATGAGACAATA
+        #       AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT
+        #                             CTAGGTCAGCATACGAAATTTTTT
+        #       AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA <- goal
+
+        add_fwd, seq, add_rev = _binding_seq(
+            "GGTCTCAATGAGACAATA",
+            rev="TTTCGTATGCTGACCTAG",
+            seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT",
+        )
+        self.assertEqual(6, add_fwd)
+        self.assertEqual("AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA", seq)
+        self.assertEqual(0, add_rev)
+
+        with self.assertRaises(ValueError):
+            # fwd primer not in seq
+            _binding_seq("GGTCTCAATGAGACAATA", seq="GCATCGATCTCATCTACGACTAGCAT")
+
+        with self.assertRaises(ValueError):
+            # rev primer not in seq
+            _binding_seq(
+                "GGTCTCAATGAGACAATA",
+                rev="TTTCGTATCCCCCCTAG",
+                seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT",
+            )
