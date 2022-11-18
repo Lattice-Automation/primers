@@ -298,6 +298,11 @@ def _binding_seq(fwd: str, rev: str = "", seq: str = "") -> Tuple[int, str, int]
     if not seq:
         return (0, "", 0)
 
+    fwd = fwd.upper()
+    rev = rev.upper()
+    seq = seq.upper()
+    seq += seq + seq  # account for amplifications across the zero-index
+
     add_fwd = 0
     add_rev = 0
 

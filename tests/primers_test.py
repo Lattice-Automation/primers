@@ -178,3 +178,22 @@ class TestPrimers(TestCase):
                 rev="TTTCGTATCCCCCCTAG",
                 seq="AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT",
             )
+
+    def test_primers_binding_sites_zero_index(self):
+        """validate that the binding seq search works across the zero-index of a plasmid
+
+        for: https://github.com/Lattice-Automation/primers/issues/4
+        """
+
+        add_fwd, seq, add_rev = _binding_seq(
+            "CCCGTAGAAAAGATCAAAGGATCTTC",
+            rev="GTAAAAAGGCCGCGTTGCTG",
+            seq="CGGAGCCTATGGAAAAACGCCAGCAACGCGGCCTTTTTACGGTTCCTGGCCTTCCACTGAGCGTCAGACCCCGTAGAAAAGATCAAAGGATCTTCTTGAGATCCTTTTTTTCT",
+        )
+
+        self.assertEqual(
+            "CCCGTAGAAAAGATCAAAGGATCTTCTTGAGATCCTTTTTTTCTCGGAGCCTATGGAAAAACGCCAGCAACGCGGCCTTTTTAC",
+            seq,
+        )
+        self.assertEqual(0, add_fwd)
+        self.assertEqual(0, add_rev)
