@@ -50,7 +50,7 @@ print(fwd.tm_total) # 70.0
 
 ### CLI
 
-```
+```bash
 $ primers create --help
 usage: primers create [-h] [-f SEQ] [-fl INT INT] [-r SEQ] [-rl INT INT] [-t SEQ] [-j | --json | --no-json] SEQ
 
@@ -80,7 +80,7 @@ By default, the primers are logged in table format in rows of `dir, tm, ttm, gc,
 - p: the primer's penalty score. Lower is better
 - seq: the sequence of the primer in the 5' to the 3' direction
 
-```txt
+```bash
 $ primers create -f GGTCTC -r GAAGAC AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAA
   dir    tm   ttm  gc     dg     p  seq
   FWD  60.8  67.0 0.5  -1.86  5.93  GGTCTCAATGAGACAATAGCACACAC
@@ -152,7 +152,7 @@ penalty_offtarget: float = 20.0
 
 If you already have primers, and you want to see their features and penalty score, use the `primers score` command. The command below scores a FWD and REV primer against the sequence `-s` that they were created to amplify:
 
-```txt
+```bash
 $ primers score GGTCTCAATGAGACAATA TTTCGTATGCTGACCTAG -s AATGAGACAATAGCACACACAGCTAGGTCAGCATACGAAATTT --json | jq
 [
   {
