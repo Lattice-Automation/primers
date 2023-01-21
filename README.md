@@ -198,7 +198,7 @@ $ primers score GGTCTCAATGAGACAATA TTTCGTATGCTGACCTAG -s AATGAGACAATAGCACACACAGC
 
 ### Off-target Binding Sites
 
-Usually, off-target binding sites should be avoided. In `primers`, off-target binding sites are those with `<= 1` mismatch in the last 10 bair pairs of the primer's 3' end. This definition experimentally supported by:
+Usually, off-target binding sites should be avoided. In `primers`, off-target binding sites are those with `<= 1` mismatch in the last 10 bair pairs of the primer's 3' end. This definition is experimentally supported by:
 
 > Wu, J. H., Hong, P. Y., & Liu, W. T. (2009). Quantitative effects of position and type of single mismatch on single base primer extension. Journal of microbiological methods, 77(3), 267-275
 
